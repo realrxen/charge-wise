@@ -2,6 +2,10 @@
 
 仅比较家庭充电桩与第三方公共快充，不含超充权益。纯静态 HTML / CSS / ES Modules，无需安装依赖。
 
+**在线访问与分享：** https://realrxen.github.io/charge-wise/
+
+GitHub Actions 在每次推送到 `main` 后运行计算测试并发布 `dist/` 到 GitHub Pages，也可在 Actions 中手动运行。页面参数仅保存在访问者自己的浏览器中，分享链接不会带上你的本地参数。
+
 **直接使用：** 用浏览器打开本目录的 `chargewise.html`，无需服务器，也不依赖网络。该单文件由 `npm run build` 从 `dist/` 源代码生成，修改源码后重新生成即可。
 
 **开发预览：**
