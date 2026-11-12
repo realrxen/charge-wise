@@ -25,7 +25,7 @@ test('跨月与单个周末日不重复或漏算里程',()=>{
   assert.equal(calendar(fixture({start:'2027-03-01',end:'2027-02-28'})).valid,false);
 });
 test('默认智能充电选择允许窗口内 0.75 元时段而非算术平均价',()=>{
-  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.75);near(r.pub.cash,1312.5);near(r.home.cash,2686.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1642.5);
+  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.75);near(r.pub.cash,1312.5);near(r.home.cash,2686.5);near(r.home.economic,1886.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1642.5);
 });
 test('跨小时按实际度数计费，结束分钟的部分电量精确处理',()=>{
   const s=fixture({windows:[{start:'15:40',end:'16:10'}],batch:30});

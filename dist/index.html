@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="description" content="比较特斯拉家庭充电与公共快充的真实成本，按分钟模拟分时电价，结合里程、停车费和时间价值辅助决策。">
   <title>Chargewise · 特斯拉充电成本对比</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=home-cost-v2">
 </head>
 <body>
   <header class="topbar"><div class="topbar-inner">
@@ -39,7 +39,7 @@
           <label class="home-removal-option" for="removeCharger"><input id="removeCharger" data-key="removeCharger" type="checkbox">退租时拆除充电桩</label>
           <div class="home-fee-summary" aria-live="polite"><div><span>超长线路安装费</span><output id="cable-installation">—</output></div><div><span>退租拆除费</span><output id="removal-cost">—</output></div></div>
           <p class="field-note" id="removal-note"></p>
-          <p class="field-note">充电桩可拆卸保留，残值默认 0 元；可按保留或转让价值填写，仅冲减经济成本，不视为现金退款。</p>
+          <p class="field-note">勾选拆除后，残值默认 800 元，按后续继续使用、节省再次购买充电桩费用估算，可手动调整；取消勾选归零。残值仅冲减经济成本，不视为现金退款。</p>
         </div></details>
         <details open class="param-section"><summary><span><b class="section-num">03</b> 公共快充</span><span class="chevron">⌄</span></summary><div class="param-content">
           <div class="field-pair"><div class="field"><label for="batch">每次充电量上限</label><div class="input-unit"><input id="batch" data-key="batch" type="number" min="1" max="200" step="1"><span>度</span></div></div><div class="field"><label for="power">实际平均功率</label><div class="input-unit"><input id="power" data-key="power" type="number" min="1" max="500" step="1"><span>kW</span></div></div></div>
@@ -95,6 +95,6 @@
     <footer><span><b>Chargewise</b> · 让充电选择有据可依</span><span>本地计算，无需登录 · 不含超级充电权益</span></footer>
   </main>
   <div id="toast" role="status" hidden></div>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=home-cost-v2"></script>
 </body>
 </html>

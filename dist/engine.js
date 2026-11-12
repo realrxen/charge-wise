@@ -1,8 +1,8 @@
 export const DEFAULTS = {
   start: '2026-11-10', end: '2027-02-28', weekdayKm: 50, weekendKm: 300,
   completion: 100, consumption: 20, homePrice: 0.45, equipment: 1499,
-  installation: 0, cableLength: 40, cableRate: null, removeCharger: true,
-  salvage: 0, distance: 200, freeMinutes: 120,
+  installation: 0, cableLength: 40, cableRate: 25, removeCharger: true,
+  salvage: 800, distance: 200, freeMinutes: 120,
   parkingRate: 6, extraMinutes: 10, timeValue: 30, batch: 40, power: 60,
   mode: 'smart', windows: [{start:'09:20',end:'11:20'}, {start:'14:00',end:'17:20'}],
   tariffs: Array.from({length:24}, (_, h) => {

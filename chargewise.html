@@ -129,7 +129,7 @@
           <label class="home-removal-option" for="removeCharger"><input id="removeCharger" data-key="removeCharger" type="checkbox">退租时拆除充电桩</label>
           <div class="home-fee-summary" aria-live="polite"><div><span>超长线路安装费</span><output id="cable-installation">—</output></div><div><span>退租拆除费</span><output id="removal-cost">—</output></div></div>
           <p class="field-note" id="removal-note"></p>
-          <p class="field-note">充电桩可拆卸保留，残值默认 0 元；可按保留或转让价值填写，仅冲减经济成本，不视为现金退款。</p>
+          <p class="field-note">勾选拆除后，残值默认 800 元，按后续继续使用、节省再次购买充电桩费用估算，可手动调整；取消勾选归零。残值仅冲减经济成本，不视为现金退款。</p>
         </div></details>
         <details open class="param-section"><summary><span><b class="section-num">03</b> 公共快充</span><span class="chevron">⌄</span></summary><div class="param-content">
           <div class="field-pair"><div class="field"><label for="batch">每次充电量上限</label><div class="input-unit"><input id="batch" data-key="batch" type="number" min="1" max="200" step="1"><span>度</span></div></div><div class="field"><label for="power">实际平均功率</label><div class="input-unit"><input id="power" data-key="power" type="number" min="1" max="500" step="1"><span>kW</span></div></div></div>
@@ -190,8 +190,8 @@
 const DEFAULTS = {
   start: '2026-11-10', end: '2027-02-28', weekdayKm: 50, weekendKm: 300,
   completion: 100, consumption: 20, homePrice: 0.45, equipment: 1499,
-  installation: 0, cableLength: 40, cableRate: null, removeCharger: true,
-  salvage: 0, distance: 200, freeMinutes: 120,
+  installation: 0, cableLength: 40, cableRate: 25, removeCharger: true,
+  salvage: 800, distance: 200, freeMinutes: 120,
   parkingRate: 6, extraMinutes: 10, timeValue: 30, batch: 40, power: 60,
   mode: 'smart', windows: [{start:'09:20',end:'11:20'}, {start:'14:00',end:'17:20'}],
   tariffs: Array.from({length:24}, (_, h) => {
@@ -344,7 +344,7 @@ let foldedHours=new Set();
 let state=clone(DEFAULTS),basis='economic',lastResult=null,renderTimer,toastTimer;
 function loadFoldedHours(){try{const hours=JSON.parse(localStorage.getItem(FOLD_STORAGE));if(Array.isArray(hours))foldedHours=new Set(hours.filter(h=>Number.isInteger(h)&&h>=0&&h<24));}catch{}}
 function saveFoldedHours(){try{localStorage.setItem(FOLD_STORAGE,JSON.stringify([...foldedHours]));}catch{}}
-function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved?.version===1){const next={...clone(DEFAULTS),...saved.state};if(validState(next))state=next;}}catch{}}
+function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved?.version===1||saved?.version===2){const next={...clone(DEFAULTS),...saved.state};if(saved.version===1){if(next.cableRate==null)next.cableRate=DEFAULTS.cableRate;if(next.removeCharger&&next.salvage===0)next.salvage=DEFAULTS.salvage;}if(validState(next))state=next;}}catch{}}
 function validState(s){
   if(!s||!Array.isArray(s.tariffs)||s.tariffs.length!==24||!Array.isArray(s.windows)||s.windows.length>12)return false;
   const numeric=['weekdayKm','weekendKm','completion','consumption','homePrice','equipment','installation','cableLength','salvage','distance','freeMinutes','parkingRate','extraMinutes','timeValue','batch','power'];
@@ -359,7 +359,7 @@ const fmt=(n,d=0)=>new Intl.NumberFormat('zh-CN',{maximumFractionDigits:d}).form
 const yen=n=>'¥ '+money(n);
 const txt=(id,value)=>$(id).textContent=value;
 function toast(message){txt('toast',message);$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600);}
-function save(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,state}));}catch{document.body.classList.add('save-failed');const el=document.querySelector('.local-status');if(el)el.textContent='当前浏览器无法保存，仍可正常计算';}}
+function save(){try{localStorage.setItem(STORAGE,JSON.stringify({version:2,state}));}catch{document.body.classList.add('save-failed');const el=document.querySelector('.local-status');if(el)el.textContent='当前浏览器无法保存，仍可正常计算';}}
 function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>{if(el.type==='checkbox')el.checked=state[el.dataset.key];else el.value=state[el.dataset.key]??'';});buildTariffRows();buildWindows();buildPeriodSettings();}
 function syncHomeFees(){
   const fees=homeSetupFees(state);
@@ -585,7 +585,7 @@ function renderConclusions({driving:d,home:h,pub:p}){
 }
 document.addEventListener('input',e=>{
   const el=e.target;
-  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;}
+  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;if(el.dataset.key==='removeCharger'){state.salvage=el.checked?DEFAULTS.salvage:0;$('salvage').value=state.salvage;}}
   else if(el.dataset.tariff){const t=state.tariffs[+el.dataset.hour],key=el.dataset.tariff;t[key]=el.type==='checkbox'?el.checked:el.value===''?NaN:+el.value;if(key==='electricity'||key==='service')t.edited=true;}
   else if(el.dataset.window!==undefined){state.windows[+el.dataset.window][el.dataset.edge]=el.value;}
   else return;

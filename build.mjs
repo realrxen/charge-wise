@@ -6,7 +6,7 @@ const [html,css,engine,app]=await Promise.all([read('dist/index.html'),read('dis
 const styles=css.replace(/^@import\s+url\([^)]*\);\s*/,'');
 const script=engine.replace(/^export /gm,'')+'\n'+app.replace(/^import [^\n]+\n/,'');
 const standalone=html
-  .replace('<link rel="stylesheet" href="./style.css">',()=>`<style>\n${styles}\n</style>`)
-  .replace('<script type="module" src="./app.js"></script>',()=>`<script>\n'use strict';\n${script.replaceAll('</script','<\\/script')}\n</script>`);
+  .replace(/<link rel="stylesheet" href="\.\/style\.css(?:\?[^"\s]*)?">/,()=>`<style>\n${styles}\n</style>`)
+  .replace(/<script type="module" src="\.\/app\.js(?:\?[^"\s]*)?"><\/script>/,()=>`<script>\n'use strict';\n${script.replaceAll('</script','<\\/script')}\n</script>`);
 await writeFile(new URL('chargewise.html',import.meta.url),standalone);
 console.log('已生成 chargewise.html，可直接用浏览器打开。');
