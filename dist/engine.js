@@ -28,9 +28,9 @@ export function automaticSalvage(s){
 export function homeSalvage(s){return s.salvageMode==='auto'?automaticSalvage(s):s.salvage;}
 export function calendar(s) {
   const [a,b]=rentalDates(s);
-  if (!Number.isFinite(a+b) || b<a) return {valid:false,error:'请填写有效的起止日期，结束日期应不早于开始日期。'};
+  if (!Number.isFinite(a+b) || b<a) return {valid:false,error:'请填写有效的车位租赁起止日期，结束日期应不早于开始日期。'};
   const days = Math.round((b-a)/DAY)+1;
-  if(days>3660) return {valid:false,error:'请将计算区间控制在 10 年内。'};
+  if(days>3660) return {valid:false,error:'请将车位租赁期控制在 10 年内。'};
   let weekdays=0, weekends=0;
   for(let t=a;t<=b;t+=DAY){ const d=new Date(t).getUTCDay(); d===0||d===6?weekends++:weekdays++; }
   const weekdayKm=weekdays*s.weekdayKm*s.completion/100;

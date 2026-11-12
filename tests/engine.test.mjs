@@ -72,7 +72,7 @@ test('超长安装及拆除共同计入回本成本，残值仅影响经济口�
   near(economic.energy,(upfront+removal-600)/(r.pub.economic/r.pub.charged-.4));
 });
 
-test('自动残值按首尾计天和自然周年分档，包括闰年与闰日起租',()=>{
+test('自动残值按首尾计天和自然周年分档，包括闰年与闰日车位起租',()=>{
   for(const [start,end,expected] of [
     ['2026-11-10','2026-11-10',800],['2026-11-10','2027-11-09',800],['2026-11-10','2027-11-10',400],
     ['2023-03-01','2024-02-29',800],['2023-03-01','2024-03-01',400],
@@ -82,7 +82,7 @@ test('自动残值按首尾计天和自然周年分档，包括闰年与闰日�
   assert.equal(calendar(fixture({end:'2026-02-30'})).valid,false);
   assert.ok(Number.isNaN(automaticSalvage(fixture({end:''}))));
 });
-test('租期变化重算自动残值；手动值不受租期或拆除选项影响',()=>{
+test('车位租赁期变化重算自动残值；手动值不受车位租赁期或拆除选项影响',()=>{
   const short=fixture(),long={...short,end:'2027-11-10'};
   near(homeCharging(100,short).salvage,800);near(homeCharging(100,long).salvage,400);
   near(homeCharging(100,short).cash,homeCharging(100,long).cash);
