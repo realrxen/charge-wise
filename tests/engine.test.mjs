@@ -59,7 +59,7 @@ test('线路安装只对超过 40 米的部分收费，支持小数长度',()=>{
 test('拆除按总线路长度计费，两种成本口径均包含，前期投入不包含',()=>{
   const s=fixture({cableLength:55,cableRate:80,installation:100,salvage:600});
   const h=homeCharging(100,s);near(h.removal,475);near(h.fixed,2799);near(h.cash,3319);near(h.economic,2719);
-  const kept=homeCharging(100,{...s,removeCharger:false});near(kept.removal,0);near(h.cash-kept.cash,475);near(kept.salvage,0);near(h.economic-kept.economic,-125);
+  const kept=homeCharging(100,{...s,removeCharger:false});near(kept.removal,0);near(h.cash-kept.cash,475);near(kept.salvage,600);near(h.economic-kept.economic,475);
   near(homeCharging(0,{...s,cableLength:0}).removal,200);
 });
 test('超过免费长度但缺少单价时，暂停计算；免费范围内不需要单价',()=>{
@@ -90,20 +90,22 @@ test('自动残值按首尾计天和自然周年分档，包括闰年与闰日�
   assert.equal(calendar(fixture({end:'2026-02-30'})).valid,false);
   assert.ok(Number.isNaN(automaticSalvage(fixture({end:''}))));
 });
-test('租期变化重算自动残值；手动值保留；不拆除时不允许产生残值抵扣',()=>{
+test('租期变化重算自动残值；手动值不受租期或拆除选项影响',()=>{
   const short=fixture(),long={...short,end:'2027-11-10'};
   near(homeCharging(100,short).salvage,800);near(homeCharging(100,long).salvage,400);
   near(homeCharging(100,short).cash,homeCharging(100,long).cash);
   near(homeCharging(100,long).economic-homeCharging(100,short).economic,400);
   const manual=fixture({salvage:650,end:long.end});near(homeSalvage(manual),650);
-  const kept={...manual,removeCharger:false};near(homeCharging(100,kept).removal,0);near(homeCharging(100,kept).salvage,0);near(homeCharging(100,kept).cash,homeCharging(100,kept).economic);
+  const kept={...manual,removeCharger:false};near(homeCharging(100,kept).removal,0);near(homeCharging(100,kept).salvage,650);near(homeCharging(100,kept).cash-homeCharging(100,kept).economic,650);
+  near(homeSalvage({...kept,salvageMode:'auto'}),0);
 });
 test('回本使用与费用明细相同的残值，现金口径不受年限分档影响',()=>{
   const pub=calculate(DEFAULTS).pub,short=fixture(),long={...short,end:'2027-11-10'};
   near(breakEven(short,pub,'cash').energy,breakEven(long,pub,'cash').energy);
   near(breakEven(long,pub).energy-breakEven(short,pub).energy,400/(pub.economic/pub.charged-short.homePrice));
-  const kept={...long,removeCharger:false,salvage:9999,salvageMode:'manual'};
-  near(breakEven(kept,pub).energy,1499/(pub.economic/pub.charged-short.homePrice));
+  const kept={...long,removeCharger:false,salvage:500,salvageMode:'manual'};
+  near(breakEven(kept,pub).energy,999/(pub.economic/pub.charged-short.homePrice));
+  near(breakEven(kept,pub,'cash').energy,1499/(pub.cash/pub.charged-short.homePrice));
 });
 
 

@@ -1,4 +1,4 @@
-import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,money} from './engine.js?v=tariff-only-v4';
+import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,money} from './engine.js?v=salvage-edit-v5';
 
 const $=id=>document.getElementById(id), STORAGE='chargewise:v1';
 const FOLD_STORAGE='chargewise:folded-hours:v1';
@@ -13,7 +13,6 @@ function load(){
       const next={...clone(DEFAULTS),...saved.state};
       if(saved.version===1){if(next.cableRate==null)next.cableRate=DEFAULTS.cableRate;if(next.removeCharger&&next.salvage===0)next.salvage=DEFAULTS.salvage;}
       if(saved.version<3)next.salvageMode=next.salvage===(next.removeCharger?800:0)?'auto':'manual';
-      if(!next.removeCharger)next.salvage=0;
       delete next.mode;delete next.windows;
       if(Array.isArray(next.tariffs))next.tariffs=next.tariffs.map(({enabled,weight,...tariff})=>tariff);
       if(validState(next))state=next;
@@ -37,10 +36,9 @@ function save(){try{localStorage.setItem(STORAGE,JSON.stringify({version:4,state
 function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>{if(el.type==='checkbox')el.checked=state[el.dataset.key];else el.value=state[el.dataset.key]??'';});buildTariffRows();buildFoldSettings();}
 function syncHomeFees(){
   const salvage=homeSalvage(state);
-  if(Number.isFinite(salvage)&&(state.salvageMode==='auto'||!state.removeCharger)){state.salvage=salvage;$('salvage').value=salvage;}
-  $('salvage').disabled=!state.removeCharger;
-  $('restore-salvage').hidden=state.salvageMode==='auto'||!state.removeCharger;
-  txt('salvage-mode-note',!state.removeCharger?'不拆除：残值为 0 元。':state.salvageMode==='manual'?'已手动填写，修改租期时保留此金额。':Number.isFinite(salvage)?`按租期自动估算：${salvage===800?'不超过一年':'超过一年'}，残值 ${yen(salvage)}。`:'完成有效租期后自动估算残值。');
+  if(Number.isFinite(salvage)&&state.salvageMode==='auto'){state.salvage=salvage;$('salvage').value=salvage;}
+  $('restore-salvage').hidden=state.salvageMode==='auto';
+  txt('salvage-mode-note',state.salvageMode==='manual'?'已手动填写，修改租期或拆除选项时保留此金额。':!state.removeCharger?'不拆除：默认残值为 0 元，可按转让等期末价值手动填写。':Number.isFinite(salvage)?`按租期自动估算：${salvage===800?'不超过一年':'超过一年'}，残值 ${yen(salvage)}。`:'完成有效租期后自动估算残值。');
   const fees=homeSetupFees(state);
   txt('cable-installation',yen(fees.cableInstallation));txt('removal-cost',yen(fees.removal));
   txt('cable-note',fees.excessLength>0?`超出 ${fmt(fees.excessLength,1)} 米 × ${state.cableRate===null?'待填写单价':`${money(state.cableRate)} 元 / 米`}；前 40 米免费。`:'40 米内免费；超出部分才按安装单价计费。');
@@ -190,7 +188,6 @@ function drawSensitivity(){
     points=[...new Set(ds)].map(days=>{const s=clone(state);s.end=new Date(Date.parse(s.start+'T00:00:00Z')+(days-1)*86400000).toISOString().slice(0,10);const r=calculate(s);return {x:days,home:r.home[basis],pub:r.pub.feasible?r.pub[basis]:NaN,label:days+' 天'};});
     note=`保持起租日期与每周出行规律，改变租期并重新统计工作日、周末和需求电量；${state.salvageMode==='auto'?'残值随租期重算：一年内 800 元，超过一年 400 元，不拆除为 0 元。':'保留手动设置的期末残值。'}`;unit='天';
   }else{
-    if(!state.removeCharger){$('sensitivity-chart').innerHTML='<div class="chart-empty">勾选退租拆除后可比较不同残值</div>';txt('sensitivity-note','不拆除时，残值固定为 0 元，不计算保留充电桩的价值抵扣。');return;}
     const max=Math.max(2000,base.home.salvage*1.5,base.home.fixed*1.25),values=[0,max*.25,max*.5,max*.75,max,base.home.salvage].sort((a,b)=>a-b);
     points=[...new Set(values)].map(v=>({x:v,home:basis==='cash'?base.home.cash:base.home.cash-v,pub:base.pub.feasible?base.pub[basis]:NaN,label:fmt(v)}));
     note=basis==='cash'?'现金口径下，预估残值不会改变已支付金额，两条曲线保持不变。':'残值仅冲减家庭充电的经济成本；高残值情景需实际能够转让或保留利用才能实现。';unit='元残值';
@@ -220,7 +217,7 @@ function renderConclusions({driving:d,home:h,pub:p}){
 }
 document.addEventListener('input',e=>{
   const el=e.target;
-  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;if(el.dataset.key==='removeCharger')state.salvageMode='auto';if(el.dataset.key==='salvage')state.salvageMode='manual';}
+  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;if(el.dataset.key==='salvage')state.salvageMode='manual';}
   else if(el.dataset.tariff){const t=state.tariffs[+el.dataset.hour],key=el.dataset.tariff;t[key]=el.type==='checkbox'?el.checked:el.value===''?NaN:+el.value;if(key==='electricity'||key==='service')t.edited=true;}
   else return;
   clearTimeout(renderTimer);renderTimer=setTimeout(render,65);

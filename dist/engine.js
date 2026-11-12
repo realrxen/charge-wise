@@ -25,7 +25,7 @@ export function automaticSalvage(s){
   // Inclusive rental: the day before the anniversary completes one calendar year.
   return end<Date.UTC(year,month,day)?800:400;
 }
-export function homeSalvage(s){return !(s.removeCharger??DEFAULTS.removeCharger)?0:s.salvageMode==='auto'?automaticSalvage(s):s.salvage;}
+export function homeSalvage(s){return s.salvageMode==='auto'?automaticSalvage(s):s.salvage;}
 export function calendar(s) {
   const [a,b]=rentalDates(s);
   if (!Number.isFinite(a+b) || b<a) return {valid:false,error:'请填写有效的起止日期，结束日期应不早于开始日期。'};

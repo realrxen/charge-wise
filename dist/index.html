@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="description" content="比较特斯拉家庭充电与公共快充的真实成本，按分钟模拟分时电价，结合里程、停车费和时间价值辅助决策。">
   <title>Chargewise · 特斯拉充电成本对比</title>
-  <link rel="stylesheet" href="./style.css?v=tariff-only-v4">
+  <link rel="stylesheet" href="./style.css?v=salvage-edit-v5">
 </head>
 <body>
   <header class="topbar"><div class="topbar-inner">
@@ -35,12 +35,12 @@
           <div class="field"><label for="cableRate">超出 40 米安装单价</label><div class="input-unit"><input id="cableRate" data-key="cableRate" type="number" min="0" max="10000" step="0.01" placeholder="待填写" aria-describedby="cable-note"><span>元 / 米</span></div></div>
           <p class="field-note home-fee-note" id="cable-note">40 米内免费，仅对超出部分计费。</p>
           <div class="field"><label for="installation">其他额外安装费</label><div class="input-unit"><input id="installation" data-key="installation" type="number" min="0" max="100000" step="1"><span>元</span></div></div>
-          <div class="field"><label for="salvage">退租残值（拆卸保留）</label><div class="input-unit"><input id="salvage" data-key="salvage" type="number" min="0" max="100000" step="1" aria-describedby="salvage-mode-note"><span>元</span></div></div>
-          <p class="field-note"><span id="salvage-mode-note"></span> <button id="restore-salvage" class="text-button" type="button" hidden>恢复按租期估算</button></p>
+          <div class="field"><label for="salvage">退租残值（保留 / 转让）</label><div class="input-unit"><input id="salvage" data-key="salvage" type="number" min="0" max="100000" step="1" aria-describedby="salvage-mode-note"><span>元</span></div></div>
+          <p class="field-note"><span id="salvage-mode-note"></span> <button id="restore-salvage" class="text-button" type="button" hidden>恢复自动估算</button></p>
           <label class="home-removal-option" for="removeCharger"><input id="removeCharger" data-key="removeCharger" type="checkbox">退租时拆除充电桩</label>
           <div class="home-fee-summary" aria-live="polite"><div><span>超长线路安装费</span><output id="cable-installation">—</output></div><div><span>退租拆除费</span><output id="removal-cost">—</output></div></div>
           <p class="field-note" id="removal-note"></p>
-          <p class="field-note">勾选拆除后，租期不超过一年按 800 元、超过一年按 400 元估算保留价值；首尾计天，以起租日满一周年的前一天为一年内最后一天，闰日周年按次年 2 月末。可手动调整；不拆除则为 0 元。仅冲减经济成本，不视为现金退款。</p>
+          <p class="field-note">勾选拆除后，租期不超过一年按 800 元、超过一年按 400 元估算保留价值；首尾计天，以起租日满一周年的前一天为一年内最后一天，闰日周年按次年 2 月末。不拆除时默认 0 元，也可按转让等期末价值手动填写；手动值不随租期或拆除选项变化。仅冲减经济成本，不视为现金退款。</p>
         </div></details>
         <details open class="param-section"><summary><span><b class="section-num">03</b> 公共快充</span><span class="chevron">⌄</span></summary><div class="param-content">
           <div class="field-pair"><div class="field"><label for="batch">每次充电量</label><div class="input-unit"><input id="batch" data-key="batch" type="number" min="1" max="200" step="1"><span>度</span></div></div><div class="field"><label for="power">实际平均功率</label><div class="input-unit"><input id="power" data-key="power" type="number" min="1" max="500" step="1"><span>kW</span></div></div></div>
@@ -79,12 +79,12 @@
         <section class="surface sensitivity-section"><div class="section-heading"><div><h2>如果计划有变化</h2><p>调整一个变量，看看结果如何改变</p></div><select id="sensitivity-variable" aria-label="敏感性分析变量"><option value="mileage">行驶里程</option><option value="price">公共综合电价</option><option value="duration">使用时长</option><option value="salvage">退租残值</option></select></div><div class="sensitivity-body"><div id="sensitivity-chart" class="line-chart"></div></div><p id="sensitivity-note" class="chart-note"></p></section>
         <section class="surface detail-section"><div class="section-heading"><div><h2>完整费用明细</h2><p>现金支出与经济成本，分开看更清楚</p></div><button id="export" type="button" class="button ghost">↓ 导出明细</button></div><div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>费用项目</th><th>家庭充电桩</th><th>第三方公共快充</th></tr></thead><tbody id="detail-rows"></tbody></table></div><div class="detail-footnote"><span>ⓘ</span><p>现金支出 = 租期内实际支付费用；经济成本 = 现金支出 + 额外时间价值 − 期末残值。家充不另计操作时间；公共充电仅将往返及额外办理时间计为机会成本，充电等待可与办公重叠。</p></div></section>
         <section class="conclusions" id="conclusions"></section>
-        <details class="methodology"><summary>计算依据与边界 <span>⌄</span></summary><div><p>① 租期首尾均计入，周末合计里程按每天一半计算，不按法定节假日调整。</p><p>② 百公里充电量已包含损耗，不再次叠加。公共电费和服务费分别取 24 小时等权均价，再乘以总需求电量；不设置充电时间偏好，不进行排期，也不假设始终按最低价充电。参考均价并非实际账单的电量加权均价。</p><p>③ 公共充电次数按总电量 ÷ 每次充电量向上取整，末次只计剩余电量。按实际平均功率估算充电时长；停车费逐次计算免费额度，末次按剩余电量的时长计算。不模拟电池电量、充电曲线与温度衰减。</p><p>④ 步行速度按 80 米 / 分钟，往返距离为单程的 2 倍。停车占用 = 充电时长 + 往返步行 + 其他额外耗时；超时按分钟折算收费。时间价值只计往返及其他额外耗时，充电等待默认可与办公重叠。</p><p>⑤ 线路安装前 40 米免费，超出部分按所填单价计算；其他额外安装费单独计入。选择退租拆除时，拆除费为 200 + 5 × 总线路长度（米），两种成本口径均计入。</p><p>⑥ 自动残值按自然周年及首尾计天判断：不超过一年 800 元，超过一年 400 元；不拆除为 0 元。残值是拆下充电桩继续使用的预估价值，并非现金退款，不含后续搬运、重新安装或维修费用。回本固定沿用当前租期残值假设，不作长期电价或残值保证。所有价格均为情景输入，本站与特斯拉无关联。</p></div></details>
+        <details class="methodology"><summary>计算依据与边界 <span>⌄</span></summary><div><p>① 租期首尾均计入，周末合计里程按每天一半计算，不按法定节假日调整。</p><p>② 百公里充电量已包含损耗，不再次叠加。公共电费和服务费分别取 24 小时等权均价，再乘以总需求电量；不设置充电时间偏好，不进行排期，也不假设始终按最低价充电。参考均价并非实际账单的电量加权均价。</p><p>③ 公共充电次数按总电量 ÷ 每次充电量向上取整，末次只计剩余电量。按实际平均功率估算充电时长；停车费逐次计算免费额度，末次按剩余电量的时长计算。不模拟电池电量、充电曲线与温度衰减。</p><p>④ 步行速度按 80 米 / 分钟，往返距离为单程的 2 倍。停车占用 = 充电时长 + 往返步行 + 其他额外耗时；超时按分钟折算收费。时间价值只计往返及其他额外耗时，充电等待默认可与办公重叠。</p><p>⑤ 线路安装前 40 米免费，超出部分按所填单价计算；其他额外安装费单独计入。选择退租拆除时，拆除费为 200 + 5 × 总线路长度（米），两种成本口径均计入。</p><p>⑥ 自动残值按自然周年及首尾计天判断：不超过一年 800 元，超过一年 400 元；不拆除默认 0 元，允许手动填写转让等期末价值。残值是保留或转让充电桩的预估价值，并非现金退款，不含后续搬运、重新安装或维修费用。回本固定沿用当前租期残值假设，不作长期电价或残值保证。所有价格均为情景输入，本站与特斯拉无关联。</p></div></details>
       </div>
     </div>
     <footer><span><b>Chargewise</b> · 让充电选择有据可依</span><span>本地计算，无需登录 · 不含超级充电权益</span></footer>
   </main>
   <div id="toast" role="status" hidden></div>
-  <script type="module" src="./app.js?v=tariff-only-v4"></script>
+  <script type="module" src="./app.js?v=salvage-edit-v5"></script>
 </body>
 </html>
