@@ -1,4 +1,4 @@
-import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,tariffAverage,money} from './engine.js?v=price-position-v7';
+import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,tariffAverage,money} from './engine.js?v=card-costs-v8';
 
 const $=id=>document.getElementById(id), STORAGE='chargewise:v1';
 const FOLD_STORAGE='chargewise:folded-hours:v1';
@@ -96,6 +96,7 @@ function render(){
     txt('home-badge','便利之选');txt('public-badge','无需设备投入');
     for(const id of ['cost-chart','price-chart','breakeven-chart','sensitivity-chart'])$(id).innerHTML='<div class="chart-empty">完善参数后重新计算</div>';
     $('travel-donut').style.background='#edf1f7';$('detail-rows').innerHTML='';$('conclusions').innerHTML='';
+    $('home-breakdown').innerHTML='';$('public-breakdown').innerHTML='';
     $('recommendation').textContent='参数尚未完成，暂不比较费用或推荐方案。';return;
   }
   $('error-banner').hidden=true;$('export').disabled=false;
@@ -119,7 +120,29 @@ function render(){
   txt('public-bottom',basis==='economic'?`含时间成本 ${yen(p.time)} · 现金支付 ${yen(p.cash)}`:'仅统计实际付款 · 不含时间价值');
   const rec=winner==='tie'?'<strong>当前口径下，两种方案成本基本相同。</strong><p>家充减少往返，公共快充无需一次性设备投入，可按便利性选择。</p>':`<strong>当前估算下，${winner==='home'?'家庭充电桩':'公共快充'}更经济，预计节省 ${yen(Math.abs(diff))}。</strong><p>公共费用按填写的 ${money(state.publicPrice)} 元 / 度综合单价计算（含服务费）。${basis==='economic'?'已纳入停车、额外时间价值和家充期末残值。':'基于租期内预计付款，不扣残值，不加入时间价值。'}</p>`;
   $('recommendation').innerHTML=`<span class="rec-icon">ϟ</span><div>${rec}</div>`;
-  drawCost(r);drawTravel(d);drawPrices(p);drawBreakEven(r);drawSensitivity();renderDetails(r);renderConclusions(r);
+  renderPlanBreakdowns(r);drawCost(r);drawTravel(d);drawPrices(p);drawBreakEven(r);drawSensitivity();renderDetails(r);renderConclusions(r);
+}
+function renderPlanBreakdowns({driving:d,home:h,pub:p}){
+  const homeRows=[
+    ['设备及基础安装',state.equipment,'一次性投入'],
+    ['超长线路安装费',h.cableInstallation,h.excessLength>0?`${fmt(h.excessLength,1)} 米 × ${money(state.cableRate)} 元 / 米`:'总线路不超过 40 米，免超长安装费'],
+    ['其他额外安装费',state.installation,'其他施工费用'],
+    ['家庭充电电费',h.electricity,`${fmt(d.energy,5)} 度 × ${money(state.homePrice)} 元 / 度`],
+    ['退租拆除费',h.removal,state.removeCharger?`200 元 + 5 元 / 米 × ${fmt(state.cableLength,1)} 米`:'未勾选拆除，费用为 0'],
+    ['现金支出合计',h.cash,'设备 + 安装 + 电费 + 拆除费','cash'],
+    ['期末残值抵扣',h.salvage?-h.salvage:0,'仅抵扣经济成本，不减少现金支出'],
+    ['经济成本合计',h.economic,'现金支出 − 期末残值','economic']
+  ];
+  const publicRows=[
+    ['设备及安装投入',0,'无需购置设备'],
+    ['公共充电费',p.charging,`${fmt(d.energy,5)} 度 × ${money(state.publicPrice)} 元 / 度，含服务费`],
+    ['停车费',p.parking,`${p.count} 次充电 · 每次免费 ${fmt(state.freeMinutes)} 分钟，超时 ${money(state.parkingRate)} 元 / 时`],
+    ['现金支出合计',p.cash,'充电费 + 停车费','cash'],
+    ['额外时间成本',p.time,`${fmt(p.totalMinutes,2)} 分钟 ÷ 60 × ${money(state.timeValue)} 元 / 小时，仅计经济成本`],
+    ['经济成本合计',p.economic,'现金支出 + 额外时间成本','economic']
+  ];
+  const markup=rows=>`<h4>费用明细</h4><dl class="plan-cost-list">${rows.map(([label,value,note,total])=>`<div class="plan-cost-row${total?' is-total':''}${total===basis?' is-current':''}"><dt><span>${label}</span><small>${note}</small></dt><dd>${yen(value)}</dd></div>`).join('')}</dl>`;
+  $('home-breakdown').innerHTML=markup(homeRows);$('public-breakdown').innerHTML=markup(publicRows);
 }
 function drawCost({home:h,pub:p}){
   txt('cost-basis-label',`${basis==='cash'?'现金支出':'经济成本'} · 元`);

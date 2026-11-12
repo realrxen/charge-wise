@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="description" content="比较特斯拉家庭充电与公共快充的真实成本，按分钟模拟分时电价，结合里程、停车费和时间价值辅助决策。">
   <title>Chargewise · 特斯拉充电成本对比</title>
-  <link rel="stylesheet" href="./style.css?v=price-position-v7">
+  <link rel="stylesheet" href="./style.css?v=card-costs-v8">
 </head>
 <body>
   <header class="topbar"><div class="topbar-inner">
@@ -66,8 +66,8 @@
       <div class="results">
         <section class="comparison-section" id="compare"><div class="section-heading"><div><h2>两种方案，一目了然</h2><p>同一出行计划下的完整成本对比</p></div><div class="segmented" aria-label="成本口径"><button type="button" class="active" data-basis="economic">经济成本</button><button type="button" data-basis="cash">现金支出</button></div></div>
           <div class="compare-grid">
-            <article class="plan-card home-card"><div class="plan-card-top"><div class="plan-icon home-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10 12 3l9 7M5 9v11h14V9M10 20v-7h4v7"/></svg></div><span id="home-badge" class="plan-tag">便利之选</span></div><h3>家庭充电桩</h3><p class="plan-subtitle">回到家，充好电，再出发</p><div class="plan-price"><span>¥</span><strong id="home-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong id="home-fixed">—</strong></div><div><span>每度电</span><strong id="home-unit">—</strong></div><div><span>期末残值</span><strong id="home-salvage">—</strong></div></div><div class="plan-bottom" id="home-bottom">在家充电，无额外往返</div></article>
-            <article class="plan-card public-card"><div class="plan-card-top"><div class="plan-icon public-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M8 6h6v5H8zM16 9h2l3 3v5a2 2 0 0 1-4 0v-3M11 14l-2 3h3l-1 3"/></svg></div><span id="public-badge" class="plan-tag">低投入之选</span></div><h3>第三方公共快充</h3><p class="plan-subtitle">随需随充，无需设备投入</p><div class="plan-price"><span>¥</span><strong id="public-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong>¥ 0</strong></div><div><span>计算单价</span><strong id="public-unit">—</strong></div><div><span>额外时间</span><strong id="public-time">—</strong></div></div><div class="plan-bottom" id="public-bottom">按手动填写的综合单价计算（含服务费）</div></article>
+            <article class="plan-card home-card"><div class="plan-card-top"><div class="plan-icon home-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10 12 3l9 7M5 9v11h14V9M10 20v-7h4v7"/></svg></div><span id="home-badge" class="plan-tag">便利之选</span></div><h3>家庭充电桩</h3><p class="plan-subtitle">回到家，充好电，再出发</p><div class="plan-price"><span>¥</span><strong id="home-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong id="home-fixed">—</strong></div><div><span>每度电</span><strong id="home-unit">—</strong></div><div><span>期末残值</span><strong id="home-salvage">—</strong></div></div><section class="plan-breakdown" id="home-breakdown" aria-label="家庭充电桩费用明细"></section><div class="plan-bottom" id="home-bottom">在家充电，无额外往返</div></article>
+            <article class="plan-card public-card"><div class="plan-card-top"><div class="plan-icon public-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M8 6h6v5H8zM16 9h2l3 3v5a2 2 0 0 1-4 0v-3M11 14l-2 3h3l-1 3"/></svg></div><span id="public-badge" class="plan-tag">低投入之选</span></div><h3>第三方公共快充</h3><p class="plan-subtitle">随需随充，无需设备投入</p><div class="plan-price"><span>¥</span><strong id="public-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong>¥ 0</strong></div><div><span>计算单价</span><strong id="public-unit">—</strong></div><div><span>额外时间</span><strong id="public-time">—</strong></div></div><section class="plan-breakdown" id="public-breakdown" aria-label="公共快充费用明细"></section><div class="plan-bottom" id="public-bottom">按手动填写的综合单价计算（含服务费）</div></article>
           </div>
           <div class="recommendation" id="recommendation" aria-live="polite"></div>
         </section>
@@ -88,6 +88,6 @@
     <footer><span><b>Chargewise</b> · 让充电选择有据可依</span><span>本地计算，无需登录 · 不含超级充电权益</span></footer>
   </main>
   <div id="toast" role="status" hidden></div>
-  <script type="module" src="./app.js?v=price-position-v7"></script>
+  <script type="module" src="./app.js?v=card-costs-v8"></script>
 </body>
 </html>

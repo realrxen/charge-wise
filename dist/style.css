@@ -90,3 +90,20 @@
 
 .parameter-groups .public-price-field{grid-column:1/-1}
 .parameter-groups #public-price-note{margin:-6px 0 15px}
+
+/* Itemized costs stay within each comparison card. */
+.compare-grid>.plan-card{display:flex;flex-direction:column}
+.plan-breakdown{margin:0 0 18px;padding-top:14px;border-top:1px solid var(--border)}
+.plan-breakdown h4{margin:0 0 10px;font-size:12px;font-weight:600;color:#405370}
+.plan-cost-list{margin:0}
+.plan-cost-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;padding:8px 0}
+.plan-cost-row+.plan-cost-row{border-top:1px solid #f0f3f8}
+.plan-cost-row dt{min-width:0;color:#6f7f96;font-size:11px}
+.plan-cost-row dt span,.plan-cost-row dt small{display:block}
+.plan-cost-row dt small{font-size:9px;color:#95a0b2;margin-top:3px;line-height:1.7;overflow-wrap:anywhere}
+.plan-cost-row dd{margin:0;font-size:12px;font-weight:500;color:#405370;white-space:nowrap;font-variant-numeric:tabular-nums}
+.plan-cost-row.is-total dt span,.plan-cost-row.is-total dd{font-weight:600;color:#334c71}
+.plan-cost-row.is-current{margin:0 -10px;padding:9px 10px;border-radius:6px;background:#f0f5ff}
+.plan-cost-row.is-current dt span,.plan-cost-row.is-current dd{color:var(--blue)}
+.compare-grid>.plan-card>.plan-bottom{margin-top:auto}
+@media(max-width:620px){.comparison-section .compare-grid{grid-template-columns:minmax(0,1fr)}.plan-breakdown{margin-bottom:14px}.plan-cost-row{gap:10px}.plan-cost-row dt{font-size:11px}.plan-cost-row dd{font-size:12px}}

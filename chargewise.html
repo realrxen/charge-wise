@@ -99,6 +99,23 @@
 .parameter-groups .public-price-field{grid-column:1/-1}
 .parameter-groups #public-price-note{margin:-6px 0 15px}
 
+/* Itemized costs stay within each comparison card. */
+.compare-grid>.plan-card{display:flex;flex-direction:column}
+.plan-breakdown{margin:0 0 18px;padding-top:14px;border-top:1px solid var(--border)}
+.plan-breakdown h4{margin:0 0 10px;font-size:12px;font-weight:600;color:#405370}
+.plan-cost-list{margin:0}
+.plan-cost-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:12px;padding:8px 0}
+.plan-cost-row+.plan-cost-row{border-top:1px solid #f0f3f8}
+.plan-cost-row dt{min-width:0;color:#6f7f96;font-size:11px}
+.plan-cost-row dt span,.plan-cost-row dt small{display:block}
+.plan-cost-row dt small{font-size:9px;color:#95a0b2;margin-top:3px;line-height:1.7;overflow-wrap:anywhere}
+.plan-cost-row dd{margin:0;font-size:12px;font-weight:500;color:#405370;white-space:nowrap;font-variant-numeric:tabular-nums}
+.plan-cost-row.is-total dt span,.plan-cost-row.is-total dd{font-weight:600;color:#334c71}
+.plan-cost-row.is-current{margin:0 -10px;padding:9px 10px;border-radius:6px;background:#f0f5ff}
+.plan-cost-row.is-current dt span,.plan-cost-row.is-current dd{color:var(--blue)}
+.compare-grid>.plan-card>.plan-bottom{margin-top:auto}
+@media(max-width:620px){.comparison-section .compare-grid{grid-template-columns:minmax(0,1fr)}.plan-breakdown{margin-bottom:14px}.plan-cost-row{gap:10px}.plan-cost-row dt{font-size:11px}.plan-cost-row dd{font-size:12px}}
+
 </style>
 </head>
 <body>
@@ -159,8 +176,8 @@
       <div class="results">
         <section class="comparison-section" id="compare"><div class="section-heading"><div><h2>两种方案，一目了然</h2><p>同一出行计划下的完整成本对比</p></div><div class="segmented" aria-label="成本口径"><button type="button" class="active" data-basis="economic">经济成本</button><button type="button" data-basis="cash">现金支出</button></div></div>
           <div class="compare-grid">
-            <article class="plan-card home-card"><div class="plan-card-top"><div class="plan-icon home-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10 12 3l9 7M5 9v11h14V9M10 20v-7h4v7"/></svg></div><span id="home-badge" class="plan-tag">便利之选</span></div><h3>家庭充电桩</h3><p class="plan-subtitle">回到家，充好电，再出发</p><div class="plan-price"><span>¥</span><strong id="home-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong id="home-fixed">—</strong></div><div><span>每度电</span><strong id="home-unit">—</strong></div><div><span>期末残值</span><strong id="home-salvage">—</strong></div></div><div class="plan-bottom" id="home-bottom">在家充电，无额外往返</div></article>
-            <article class="plan-card public-card"><div class="plan-card-top"><div class="plan-icon public-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M8 6h6v5H8zM16 9h2l3 3v5a2 2 0 0 1-4 0v-3M11 14l-2 3h3l-1 3"/></svg></div><span id="public-badge" class="plan-tag">低投入之选</span></div><h3>第三方公共快充</h3><p class="plan-subtitle">随需随充，无需设备投入</p><div class="plan-price"><span>¥</span><strong id="public-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong>¥ 0</strong></div><div><span>计算单价</span><strong id="public-unit">—</strong></div><div><span>额外时间</span><strong id="public-time">—</strong></div></div><div class="plan-bottom" id="public-bottom">按手动填写的综合单价计算（含服务费）</div></article>
+            <article class="plan-card home-card"><div class="plan-card-top"><div class="plan-icon home-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10 12 3l9 7M5 9v11h14V9M10 20v-7h4v7"/></svg></div><span id="home-badge" class="plan-tag">便利之选</span></div><h3>家庭充电桩</h3><p class="plan-subtitle">回到家，充好电，再出发</p><div class="plan-price"><span>¥</span><strong id="home-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong id="home-fixed">—</strong></div><div><span>每度电</span><strong id="home-unit">—</strong></div><div><span>期末残值</span><strong id="home-salvage">—</strong></div></div><section class="plan-breakdown" id="home-breakdown" aria-label="家庭充电桩费用明细"></section><div class="plan-bottom" id="home-bottom">在家充电，无额外往返</div></article>
+            <article class="plan-card public-card"><div class="plan-card-top"><div class="plan-icon public-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17M3 21h16M8 6h6v5H8zM16 9h2l3 3v5a2 2 0 0 1-4 0v-3M11 14l-2 3h3l-1 3"/></svg></div><span id="public-badge" class="plan-tag">低投入之选</span></div><h3>第三方公共快充</h3><p class="plan-subtitle">随需随充，无需设备投入</p><div class="plan-price"><span>¥</span><strong id="public-cost">—</strong><small>/ 本次租期</small></div><div class="plan-metrics"><div><span>前期投入</span><strong>¥ 0</strong></div><div><span>计算单价</span><strong id="public-unit">—</strong></div><div><span>额外时间</span><strong id="public-time">—</strong></div></div><section class="plan-breakdown" id="public-breakdown" aria-label="公共快充费用明细"></section><div class="plan-bottom" id="public-bottom">按手动填写的综合单价计算（含服务费）</div></article>
           </div>
           <div class="recommendation" id="recommendation" aria-live="polite"></div>
         </section>
@@ -362,6 +379,7 @@ function render(){
     txt('home-badge','便利之选');txt('public-badge','无需设备投入');
     for(const id of ['cost-chart','price-chart','breakeven-chart','sensitivity-chart'])$(id).innerHTML='<div class="chart-empty">完善参数后重新计算</div>';
     $('travel-donut').style.background='#edf1f7';$('detail-rows').innerHTML='';$('conclusions').innerHTML='';
+    $('home-breakdown').innerHTML='';$('public-breakdown').innerHTML='';
     $('recommendation').textContent='参数尚未完成，暂不比较费用或推荐方案。';return;
   }
   $('error-banner').hidden=true;$('export').disabled=false;
@@ -385,7 +403,29 @@ function render(){
   txt('public-bottom',basis==='economic'?`含时间成本 ${yen(p.time)} · 现金支付 ${yen(p.cash)}`:'仅统计实际付款 · 不含时间价值');
   const rec=winner==='tie'?'<strong>当前口径下，两种方案成本基本相同。</strong><p>家充减少往返，公共快充无需一次性设备投入，可按便利性选择。</p>':`<strong>当前估算下，${winner==='home'?'家庭充电桩':'公共快充'}更经济，预计节省 ${yen(Math.abs(diff))}。</strong><p>公共费用按填写的 ${money(state.publicPrice)} 元 / 度综合单价计算（含服务费）。${basis==='economic'?'已纳入停车、额外时间价值和家充期末残值。':'基于租期内预计付款，不扣残值，不加入时间价值。'}</p>`;
   $('recommendation').innerHTML=`<span class="rec-icon">ϟ</span><div>${rec}</div>`;
-  drawCost(r);drawTravel(d);drawPrices(p);drawBreakEven(r);drawSensitivity();renderDetails(r);renderConclusions(r);
+  renderPlanBreakdowns(r);drawCost(r);drawTravel(d);drawPrices(p);drawBreakEven(r);drawSensitivity();renderDetails(r);renderConclusions(r);
+}
+function renderPlanBreakdowns({driving:d,home:h,pub:p}){
+  const homeRows=[
+    ['设备及基础安装',state.equipment,'一次性投入'],
+    ['超长线路安装费',h.cableInstallation,h.excessLength>0?`${fmt(h.excessLength,1)} 米 × ${money(state.cableRate)} 元 / 米`:'总线路不超过 40 米，免超长安装费'],
+    ['其他额外安装费',state.installation,'其他施工费用'],
+    ['家庭充电电费',h.electricity,`${fmt(d.energy,5)} 度 × ${money(state.homePrice)} 元 / 度`],
+    ['退租拆除费',h.removal,state.removeCharger?`200 元 + 5 元 / 米 × ${fmt(state.cableLength,1)} 米`:'未勾选拆除，费用为 0'],
+    ['现金支出合计',h.cash,'设备 + 安装 + 电费 + 拆除费','cash'],
+    ['期末残值抵扣',h.salvage?-h.salvage:0,'仅抵扣经济成本，不减少现金支出'],
+    ['经济成本合计',h.economic,'现金支出 − 期末残值','economic']
+  ];
+  const publicRows=[
+    ['设备及安装投入',0,'无需购置设备'],
+    ['公共充电费',p.charging,`${fmt(d.energy,5)} 度 × ${money(state.publicPrice)} 元 / 度，含服务费`],
+    ['停车费',p.parking,`${p.count} 次充电 · 每次免费 ${fmt(state.freeMinutes)} 分钟，超时 ${money(state.parkingRate)} 元 / 时`],
+    ['现金支出合计',p.cash,'充电费 + 停车费','cash'],
+    ['额外时间成本',p.time,`${fmt(p.totalMinutes,2)} 分钟 ÷ 60 × ${money(state.timeValue)} 元 / 小时，仅计经济成本`],
+    ['经济成本合计',p.economic,'现金支出 + 额外时间成本','economic']
+  ];
+  const markup=rows=>`<h4>费用明细</h4><dl class="plan-cost-list">${rows.map(([label,value,note,total])=>`<div class="plan-cost-row${total?' is-total':''}${total===basis?' is-current':''}"><dt><span>${label}</span><small>${note}</small></dt><dd>${yen(value)}</dd></div>`).join('')}</dl>`;
+  $('home-breakdown').innerHTML=markup(homeRows);$('public-breakdown').innerHTML=markup(publicRows);
 }
 function drawCost({home:h,pub:p}){
   txt('cost-basis-label',`${basis==='cash'?'现金支出':'经济成本'} · 元`);
