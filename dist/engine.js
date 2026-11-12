@@ -2,7 +2,7 @@ export const DEFAULTS = {
   start: '2026-11-10', end: '2027-02-28', weekdayKm: 50, weekendKm: 300,
   completion: 100, consumption: 20, homePrice: 0.45, equipment: 1499,
   installation: 0, cableLength: 40, cableRate: 25, removeCharger: true,
-  salvage: 800, distance: 200, freeMinutes: 120,
+  salvage: 800, salvageMode: 'auto', distance: 200, freeMinutes: 120,
   parkingRate: 6, extraMinutes: 10, timeValue: 30, batch: 40, power: 60,
   mode: 'smart', windows: [{start:'09:20',end:'11:20'}, {start:'14:00',end:'17:20'}],
   tariffs: Array.from({length:24}, (_, h) => {
@@ -15,9 +15,23 @@ const DAY = 86400000;
 export const timeToMinute = s => { const [h,m] = String(s).split(':').map(Number); return h*60+m; };
 export const minuteToTime = m => {const n=Math.round(m);return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;};
 export const money = n => Number.isFinite(n) ? new Intl.NumberFormat('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n) : '—';
+function rentalDates(s){
+  const parse=value=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return NaN;const time=Date.parse(value+'T00:00:00Z');return Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===value?time:NaN;};
+  return [parse(s.start),parse(s.end)];
+}
+export function automaticSalvage(s){
+  if(!(s.removeCharger??DEFAULTS.removeCharger))return 0;
+  const [start,end]=rentalDates(s);
+  if(!Number.isFinite(start+end)||end<start)return NaN;
+  const date=new Date(start),year=date.getUTCFullYear()+1,month=date.getUTCMonth();
+  const day=Math.min(date.getUTCDate(),new Date(Date.UTC(year,month+1,0)).getUTCDate());
+  // Inclusive rental: the day before the anniversary completes one calendar year.
+  return end<Date.UTC(year,month,day)?800:400;
+}
+export function homeSalvage(s){return !(s.removeCharger??DEFAULTS.removeCharger)?0:s.salvageMode==='auto'?automaticSalvage(s):s.salvage;}
 export function calendar(s) {
-  const a = Date.parse(s.start+'T00:00:00Z'), b = Date.parse(s.end+'T00:00:00Z');
-  if (!Number.isFinite(a+b) || b<a) return {valid:false,error:'结束日期应不早于开始日期。'};
+  const [a,b]=rentalDates(s);
+  if (!Number.isFinite(a+b) || b<a) return {valid:false,error:'请填写有效的起止日期，结束日期应不早于开始日期。'};
   const days = Math.round((b-a)/DAY)+1;
   if(days>3660) return {valid:false,error:'请将计算区间控制在 10 年内。'};
   let weekdays=0, weekends=0;
@@ -133,7 +147,7 @@ export function homeSetupFees(s){
   const fixed=s.equipment+s.installation+cableInstallation;
   return {excessLength,needsCableRate,cableInstallation,removal,fixed};
 }
-export function homeCharging(energy,s){const fees=homeSetupFees(s),electricity=energy*s.homePrice,cash=fees.fixed+fees.removal+electricity;return {...fees,electricity,service:0,parking:0,time:0,salvage:s.salvage,cash,economic:cash-s.salvage};}
+export function homeCharging(energy,s){const fees=homeSetupFees(s),electricity=energy*s.homePrice,cash=fees.fixed+fees.removal+electricity,salvage=homeSalvage(s);return {...fees,electricity,service:0,parking:0,time:0,salvage,cash,economic:cash-salvage};}
 export function calculate(s){const driving=calendar(s);if(!driving.valid)return {valid:false,error:driving.error};if(homeSetupFees(s).needsCableRate)return {valid:false,error:'线路超过 40 米，请填写超出部分的安装单价。'};const home=homeCharging(driving.energy,s),pub=publicCharging(driving.energy,s,driving.days);return {valid:true,driving,home,pub};}
 export function breakEven(s,pub,basis='economic') {
   if(!pub.feasible||pub.charged<=0) return null;
@@ -141,7 +155,7 @@ export function breakEven(s,pub,basis='economic') {
   const variable=(basis==='cash'?pub.cash:pub.economic)/pub.charged;
   const fees=homeSetupFees(s);
   if(fees.needsCableRate)return null;
-  const fixed=fees.fixed+fees.removal-(basis==='economic'?s.salvage:0);
+  const fixed=fees.fixed+fees.removal-(basis==='economic'?homeSalvage(s):0);
   if(fixed<=0)return {energy:0,km:0,variable};
   if(variable<=s.homePrice+1e-8)return null;
   const energy=fixed/(variable-s.homePrice);

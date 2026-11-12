@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {DEFAULTS,clone,calendar,availability,publicCharging,calculate,homeCharging,homeSetupFees,breakEven,minuteToTime} from '../dist/engine.js';
+import {DEFAULTS,clone,calendar,availability,publicCharging,calculate,homeCharging,homeSetupFees,automaticSalvage,homeSalvage,breakEven,minuteToTime} from '../dist/engine.js';
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
-function fixture(extra={}){return {...clone(DEFAULTS),...extra};}
+function fixture(extra={}){return {...clone(DEFAULTS),...(Object.hasOwn(extra,'salvage')?{salvageMode:'manual'}:{}),...extra};}
 
 test('页面原生数字输入的范围和步长接受全部默认值',()=>{
   const html=readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');
@@ -85,7 +85,7 @@ test('线路安装只对超过 40 米的部分收费，支持小数长度',()=>{
 test('拆除按总线路长度计费，两种成本口径均包含，前期投入不包含',()=>{
   const s=fixture({cableLength:55,cableRate:80,installation:100,salvage:600});
   const h=homeCharging(100,s);near(h.removal,475);near(h.fixed,2799);near(h.cash,3319);near(h.economic,2719);
-  const kept=homeCharging(100,{...s,removeCharger:false});near(kept.removal,0);near(h.cash-kept.cash,475);near(h.economic-kept.economic,475);
+  const kept=homeCharging(100,{...s,removeCharger:false});near(kept.removal,0);near(h.cash-kept.cash,475);near(kept.salvage,0);near(h.economic-kept.economic,-125);
   near(homeCharging(0,{...s,cableLength:0}).removal,200);
 });
 test('超过免费长度但缺少单价时，暂停计算；免费范围内不需要单价',()=>{
@@ -103,4 +103,31 @@ test('超长安装及拆除共同计入回本成本，残值仅影响经济口�
   const upfront=1499+1000+100,removal=500;
   near(cash.energy,(upfront+removal)/(.75-.45));
   near(economic.energy,(upfront+removal-600)/(r.pub.economic/r.pub.charged-.45));
+});
+
+
+test('自动残值按首尾计天和自然周年分档，包括闰年与闰日起租',()=>{
+  for(const [start,end,expected] of [
+    ['2026-11-10','2026-11-10',800],['2026-11-10','2027-11-09',800],['2026-11-10','2027-11-10',400],
+    ['2023-03-01','2024-02-29',800],['2023-03-01','2024-03-01',400],
+    ['2024-02-29','2025-02-27',800],['2024-02-29','2025-02-28',400],['2026-11-10','2028-11-09',400]
+  ])near(automaticSalvage(fixture({start,end})),expected);
+  assert.equal(calendar(fixture({start:'2027-02-29'})).valid,false);
+  assert.equal(calendar(fixture({end:'2026-02-30'})).valid,false);
+  assert.ok(Number.isNaN(automaticSalvage(fixture({end:''}))));
+});
+test('租期变化重算自动残值；手动值保留；不拆除时不允许产生残值抵扣',()=>{
+  const short=fixture(),long={...short,end:'2027-11-10'};
+  near(homeCharging(100,short).salvage,800);near(homeCharging(100,long).salvage,400);
+  near(homeCharging(100,short).cash,homeCharging(100,long).cash);
+  near(homeCharging(100,long).economic-homeCharging(100,short).economic,400);
+  const manual=fixture({salvage:650,end:long.end});near(homeSalvage(manual),650);
+  const kept={...manual,removeCharger:false};near(homeCharging(100,kept).removal,0);near(homeCharging(100,kept).salvage,0);near(homeCharging(100,kept).cash,homeCharging(100,kept).economic);
+});
+test('回本使用与费用明细相同的残值，现金口径不受年限分档影响',()=>{
+  const pub=calculate(DEFAULTS).pub,short=fixture(),long={...short,end:'2027-11-10'};
+  near(breakEven(short,pub,'cash').energy,breakEven(long,pub,'cash').energy);
+  near(breakEven(long,pub).energy-breakEven(short,pub).energy,400/(pub.economic/pub.charged-short.homePrice));
+  const kept={...long,removeCharger:false,salvage:9999,salvageMode:'manual'};
+  near(breakEven(kept,pub).energy,1499/(pub.economic/pub.charged-short.homePrice));
 });
