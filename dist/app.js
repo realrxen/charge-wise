@@ -1,4 +1,4 @@
-import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,tariffAverage,money} from './engine.js?v=manual-price-v6';
+import {DEFAULTS,clone,calculate,calendar,breakEven,homeSetupFees,homeSalvage,tariffAverage,money} from './engine.js?v=price-position-v7';
 
 const $=id=>document.getElementById(id), STORAGE='chargewise:v1';
 const FOLD_STORAGE='chargewise:folded-hours:v1';

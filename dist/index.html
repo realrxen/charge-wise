@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="description" content="比较特斯拉家庭充电与公共快充的真实成本，按分钟模拟分时电价，结合里程、停车费和时间价值辅助决策。">
   <title>Chargewise · 特斯拉充电成本对比</title>
-  <link rel="stylesheet" href="./style.css?v=manual-price-v6">
+  <link rel="stylesheet" href="./style.css?v=price-position-v7">
 </head>
 <body>
   <header class="topbar"><div class="topbar-inner">
@@ -43,6 +43,8 @@
           <p class="field-note">勾选拆除后，租期不超过一年按 800 元、超过一年按 400 元估算保留价值；首尾计天，以起租日满一周年的前一天为一年内最后一天，闰日周年按次年 2 月末。不拆除时默认 0 元，也可按转让等期末价值手动填写；手动值不随租期或拆除选项变化。仅冲减经济成本，不视为现金退款。</p>
         </div></details>
         <details open class="param-section"><summary><span><b class="section-num">03</b> 公共快充</span><span class="chevron">⌄</span></summary><div class="param-content">
+          <div class="field public-price-field"><label for="publicPrice">公共充电计算单价（含服务费）</label><div class="input-unit"><input id="publicPrice" data-key="publicPrice" type="number" min="0" max="20" step="0.01" aria-describedby="public-price-note"><span>元 / 度</span></div></div>
+          <p class="field-note" id="public-price-note">默认 0.70 元 / 度，可自行填写；已含电费与服务费，用于费用比较、回本与敏感性分析。停车费与额外时间另计。</p>
           <div class="field-pair"><div class="field"><label for="batch">每次固定充电量</label><div class="input-unit"><input id="batch" data-key="batch" type="number" readonly min="1" max="200" step="1"><span>度</span></div></div><div class="field"><label for="power">实际平均功率</label><div class="input-unit"><input id="power" data-key="power" type="number" min="1" max="500" step="1"><span>kW</span></div></div></div>
           <div class="field"><label for="distance">充电站距离公司</label><div class="input-unit"><input id="distance" data-key="distance" type="number" min="0" max="10000" step="50"><span>米（单程）</span></div></div>
           <div class="field-pair"><div class="field"><label for="freeMinutes">免费停车</label><div class="input-unit"><input id="freeMinutes" data-key="freeMinutes" type="number" min="0" max="1440" step="10"><span>分钟</span></div></div><div class="field"><label for="parkingRate">超时停车单价</label><div class="input-unit"><input id="parkingRate" data-key="parkingRate" type="number" min="0" max="200" step="1"><span>元 / 时</span></div></div></div>
@@ -70,8 +72,8 @@
           <div class="recommendation" id="recommendation" aria-live="polite"></div>
         </section>
         <section class="chart-grid"><article class="surface"><div class="section-heading"><div><h2>钱花在了哪里</h2><p>对比每一项投入与使用成本</p></div><span class="tiny-label" id="cost-basis-label">经济成本 · 元</span></div><div id="cost-chart" class="cost-chart"></div><div class="chart-legend"><span><i style="--swatch:#275de5"></i>设备 / 安装</span><span><i style="--swatch:#b895ce"></i>拆除费</span><span><i style="--swatch:#7aa2f8"></i>家庭电费</span><span><i style="--swatch:#bed1fc"></i>公共综合充电费</span><span><i style="--swatch:#8a9aad"></i>停车费</span><span><i style="--swatch:#dce4ef"></i>时间成本</span></div><p class="chart-note" id="cost-chart-note"></p></article><article class="surface"><div class="section-heading"><div><h2>你的出行结构</h2><p>每一公里，都纳入计算</p></div></div><div class="travel-visual"><div id="travel-donut" class="travel-donut"><div><strong id="travel-total">—</strong><span>累计公里</span></div></div><div class="travel-legend"><div><span><i class="dot blue"></i> 工作日通勤</span><strong id="weekday-share">—</strong><small id="weekday-distance">—</small></div><div><span><i class="dot pale"></i> 周末出行</span><strong id="weekend-share">—</strong><small id="weekend-distance">—</small></div></div></div></article></section>
-        <section class="surface tariff-section" id="tariffs"><div class="section-heading"><div><div class="eyebrow">PUBLIC CHARGING RATES</div><h2>公共充电电价</h2><p>截图分时电价供参考，费用按下方手填单价计算</p></div><div class="avg-badge"><strong id="public-calculation-price">—</strong><span>元 / 度 · 当前计算单价，含服务费</span></div></div>
-          <div class="public-price-setting"><div class="field"><label for="publicPrice">公共充电计算单价（含服务费）</label><div class="input-unit"><input id="publicPrice" data-key="publicPrice" type="number" min="0" max="20" step="0.01" aria-describedby="public-price-note"><span>元 / 度</span></div></div><p class="field-note" id="public-price-note">自行填写预计实际支付的综合单价，默认 0.70 元 / 度，已含电费与服务费；费用比较、回本与敏感性分析使用此值。下方分时表仅供参考，停车费与额外时间另计。</p></div>
+        <section class="surface tariff-section" id="tariffs"><div class="section-heading"><div><div class="eyebrow">PUBLIC CHARGING RATES</div><h2>公共充电电价</h2><p>截图分时电价供参考，费用使用上方“公共快充”中填写的计算单价</p></div><div class="avg-badge"><strong id="public-calculation-price">—</strong><span>元 / 度 · 当前计算单价，含服务费</span></div></div>
+
           <p class="chart-note">下方分时表的等权参考均价为 <strong id="reference-avg">—</strong> 元 / 度，仅供参考，不参与计算。</p>
           <div class="price-chart-wrap"><div class="chart-axis-label">元 / 度</div><div id="price-chart"></div></div><div class="price-chart-footer"><div class="chart-legend"><span><i style="--swatch:#2a65eb"></i>综合电价（电费 + 服务费）</span></div></div>
           <details open class="tariff-details" id="tariff-price-table"><summary><span>逐小时电价 <span class="small-badge">24 个时段</span></span><span class="expand-text">展开 / 收起 ⌄</span></summary><div class="tariff-table-wrap"><p class="table-explainer">按你提供的充电价格截图录入电费与服务费，可继续修改作为参考。修改此表仅更新电价图和分时参考均价，不改变用于计算的手填单价，也不额外叠加服务费。截图的末段 22:00–23:59 按当日结束处理。</p><div class="hour-visibility-controls" aria-label="电价时段显示设置"><div class="hour-fold-range"><span>收起时段</span><select id="fold-start" aria-label="收起时段开始时间"></select><span>—</span><select id="fold-end" aria-label="收起时段结束时间"></select><button type="button" class="button ghost" id="fold-selected-hours">收起所选</button></div><button type="button" class="text-button" id="unfold-all-hours">全部展开</button></div><p id="fold-summary" class="field-note"></p><table class="tariff-table"><thead><tr><th>时段</th><th>电费 <small>元/度</small></th><th>服务费 <small>元/度</small></th><th>综合单价</th><th>价格来源</th><th>显示</th></tr></thead><tbody id="tariff-rows"></tbody></table></div></details>
@@ -86,6 +88,6 @@
     <footer><span><b>Chargewise</b> · 让充电选择有据可依</span><span>本地计算，无需登录 · 不含超级充电权益</span></footer>
   </main>
   <div id="toast" role="status" hidden></div>
-  <script type="module" src="./app.js?v=manual-price-v6"></script>
+  <script type="module" src="./app.js?v=price-position-v7"></script>
 </body>
 </html>
