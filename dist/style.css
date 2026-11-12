@@ -78,3 +78,12 @@
   .period-form .button{width:100%;justify-self:stretch}
   .period-settings-heading p{font-size:9px;line-height:1.8}
 }
+
+/* Home installation and end-of-lease removal costs. */
+.parameter-groups .home-removal-option{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:2px 0 12px;color:#5e6c83;font-size:11px;cursor:pointer}
+.home-removal-option input{width:14px;height:14px;margin:0;accent-color:var(--blue);flex-shrink:0}
+.home-fee-summary{grid-column:1/-1;padding:11px 12px;margin-bottom:10px;border:1px solid var(--border);border-radius:6px;background:#fafbfd;display:grid;gap:6px}
+.home-fee-summary>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:11px;color:#7b8799}
+.home-fee-summary output{font-weight:500;color:#405370;white-space:nowrap;font-variant-numeric:tabular-nums}
+.parameter-groups .home-fee-note{margin:-6px 0 15px}
+#removal-note{margin-bottom:8px}

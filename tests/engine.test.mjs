@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {DEFAULTS,clone,calendar,availability,publicCharging,calculate,homeCharging,breakEven,minuteToTime} from '../dist/engine.js';
+import {DEFAULTS,clone,calendar,availability,publicCharging,calculate,homeCharging,homeSetupFees,breakEven,minuteToTime} from '../dist/engine.js';
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 function fixture(extra={}){return {...clone(DEFAULTS),...extra};}
 
@@ -25,7 +25,7 @@ test('跨月与单个周末日不重复或漏算里程',()=>{
   assert.equal(calendar(fixture({start:'2027-03-01',end:'2027-02-28'})).valid,false);
 });
 test('默认智能充电选择允许窗口内 0.75 元时段而非算术平均价',()=>{
-  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.75);near(r.pub.cash,1312.5);near(r.home.cash,2286.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1642.5);
+  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.75);near(r.pub.cash,1312.5);near(r.home.cash,2686.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1642.5);
 });
 test('跨小时按实际度数计费，结束分钟的部分电量精确处理',()=>{
   const s=fixture({windows:[{start:'15:40',end:'16:10'}],batch:30});
@@ -54,7 +54,7 @@ test('自定义小时容量不足不会自动转移占比或作为完整方案�
 test('零权重或没有窗口明确不可行，零需求保持零用电与零到站',()=>{
   const s=fixture({mode:'custom'});s.tariffs.forEach(t=>t.weight=0);assert.equal(publicCharging(10,s,1).feasible,false);
   assert.equal(publicCharging(10,fixture({windows:[]}),1).feasible,false);
-  const r=calculate(fixture({completion:0}));near(r.pub.cash,0);assert.equal(r.pub.count,0);near(r.home.cash,1499);
+  const r=calculate(fixture({completion:0}));near(r.pub.cash,0);assert.equal(r.pub.count,0);near(r.home.cash,1899);
 });
 test('超时停车按分钟收费；距离、额外耗时与时间价值独立计入',()=>{
   const s=fixture({power:20,batch:40,windows:[{start:'14:00',end:'17:20'}],freeMinutes:120,parkingRate:6,distance:200,extraMinutes:10,timeValue:30});
@@ -62,15 +62,45 @@ test('超时停车按分钟收费；距离、额外耗时与时间价值独立�
   const far=publicCharging(40,{...s,distance:600},1);near(far.time,12.5);near(far.parking,2.5);
 });
 test('残值只冲减经济成本，不改变实际现金支付',()=>{
-  const a=homeCharging(100,fixture({installation:200,salvage:500}));near(a.cash,1744);near(a.economic,1244);
+  const a=homeCharging(100,fixture({installation:200,salvage:500}));near(a.cash,2144);near(a.economic,1644);
 });
 test('回本分别使用现金与经济口径，较高公共单位成本才产生交点',()=>{
   const r=calculate(DEFAULTS),cash=breakEven(DEFAULTS,r.pub,'cash'),econ=breakEven(DEFAULTS,r.pub,'economic');
-  near(cash.energy,1499/(.75-.45));near(cash.km,cash.energy*5);assert.ok(econ.km<cash.km);
+  near(cash.energy,1899/(.75-.45));near(cash.km,cash.energy*5);assert.ok(econ.km<cash.km);
   const cheap=fixture({homePrice:2});assert.equal(breakEven(cheap,r.pub),null);
-  assert.equal(breakEven(fixture({salvage:1499}),r.pub).energy,0);
+  assert.equal(breakEven(fixture({salvage:1899}),r.pub).energy,0);
 });
 test('格式化不产生 01:60 这样的非法分钟',()=>{assert.equal(minuteToTime(119.9),'02:00');assert.equal(minuteToTime(1440),'24:00');});
 test('价格全为零时仍能正确分配电量和保留时间成本',()=>{
   const s=fixture();s.tariffs.forEach(t=>{t.electricity=0;t.service=0;});const r=publicCharging(40,s,1);assert.equal(r.feasible,true);near(r.cash,0);near(r.avg,0);near(r.time,7.5);
+});
+
+
+test('线路安装只对超过 40 米的部分收费，支持小数长度',()=>{
+  for(const [cableLength,expected] of [[0,0],[39.9,0],[40,0],[40.1,8],[55,1200]]){
+    const h=homeCharging(100,fixture({cableLength,cableRate:80,removeCharger:false}));
+    near(h.cableInstallation,expected);near(h.fixed,1499+expected);near(h.cash,1544+expected);
+  }
+});
+test('拆除按总线路长度计费，两种成本口径均包含，前期投入不包含',()=>{
+  const s=fixture({cableLength:55,cableRate:80,installation:100,salvage:600});
+  const h=homeCharging(100,s);near(h.removal,475);near(h.fixed,2799);near(h.cash,3319);near(h.economic,2719);
+  const kept=homeCharging(100,{...s,removeCharger:false});near(kept.removal,0);near(h.cash-kept.cash,475);near(h.economic-kept.economic,475);
+  near(homeCharging(0,{...s,cableLength:0}).removal,200);
+});
+test('超过免费长度但缺少单价时，暂停计算；免费范围内不需要单价',()=>{
+  assert.equal(calculate(fixture({cableLength:40,cableRate:null})).valid,true);
+  for(const cableRate of [null,undefined,NaN,-1]){
+    const s=fixture({cableLength:41,cableRate});assert.equal(calculate(s).valid,false);
+    assert.equal(homeSetupFees(s).needsCableRate,true);
+    assert.equal(breakEven(s,calculate(DEFAULTS).pub),null);
+  }
+  const zero=calculate(fixture({cableLength:41,cableRate:0}));assert.equal(zero.valid,true);near(zero.home.cableInstallation,0);
+});
+test('超长安装及拆除共同计入回本成本，残值仅影响经济口径',()=>{
+  const s=fixture({cableLength:60,cableRate:50,installation:100,salvage:600});
+  const r=calculate(s),cash=breakEven(s,r.pub,'cash'),economic=breakEven(s,r.pub,'economic');
+  const upfront=1499+1000+100,removal=500;
+  near(cash.energy,(upfront+removal)/(.75-.45));
+  near(economic.energy,(upfront+removal-600)/(r.pub.economic/r.pub.charged-.45));
 });

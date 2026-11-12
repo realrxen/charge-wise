@@ -1,7 +1,8 @@
 export const DEFAULTS = {
   start: '2026-11-10', end: '2027-02-28', weekdayKm: 50, weekendKm: 300,
   completion: 100, consumption: 20, homePrice: 0.45, equipment: 1499,
-  installation: 0, salvage: 0, distance: 200, freeMinutes: 120,
+  installation: 0, cableLength: 40, cableRate: null, removeCharger: true,
+  salvage: 0, distance: 200, freeMinutes: 120,
   parkingRate: 6, extraMinutes: 10, timeValue: 30, batch: 40, power: 60,
   mode: 'smart', windows: [{start:'09:20',end:'11:20'}, {start:'14:00',end:'17:20'}],
   tariffs: Array.from({length:24}, (_, h) => {
@@ -124,13 +125,23 @@ export function publicCharging(energy,s,days=3660) {
   return {...plan,feasible,count:plan.sessions.length,electricity,service,parking,time,cash,economic:cash+time,avg:charged>0?(electricity+service)/charged:0,hours,energy,charged,totalMinutes,available,
     error:plan.error||(!feasible?'可用窗口或所选小时容量不足，无法在租期内完成全部充电。':null)};
 }
-export function homeCharging(energy,s){const fixed=s.equipment+s.installation,electricity=energy*s.homePrice,cash=fixed+electricity;return {fixed,electricity,service:0,parking:0,time:0,salvage:s.salvage,cash,economic:cash-s.salvage};}
-export function calculate(s){const driving=calendar(s);if(!driving.valid)return {valid:false,error:driving.error};const home=homeCharging(driving.energy,s),pub=publicCharging(driving.energy,s,driving.days);return {valid:true,driving,home,pub};}
+export function homeSetupFees(s){
+  const length=s.cableLength??DEFAULTS.cableLength,excessLength=Math.max(0,length-40);
+  const needsCableRate=excessLength>0&&(!Number.isFinite(s.cableRate)||s.cableRate<0);
+  const cableInstallation=needsCableRate?NaN:excessLength*(s.cableRate??0);
+  const removal=(s.removeCharger??DEFAULTS.removeCharger)?200+5*length:0;
+  const fixed=s.equipment+s.installation+cableInstallation;
+  return {excessLength,needsCableRate,cableInstallation,removal,fixed};
+}
+export function homeCharging(energy,s){const fees=homeSetupFees(s),electricity=energy*s.homePrice,cash=fees.fixed+fees.removal+electricity;return {...fees,electricity,service:0,parking:0,time:0,salvage:s.salvage,cash,economic:cash-s.salvage};}
+export function calculate(s){const driving=calendar(s);if(!driving.valid)return {valid:false,error:driving.error};if(homeSetupFees(s).needsCableRate)return {valid:false,error:'线路超过 40 米，请填写超出部分的安装单价。'};const home=homeCharging(driving.energy,s),pub=publicCharging(driving.energy,s,driving.days);return {valid:true,driving,home,pub};}
 export function breakEven(s,pub,basis='economic') {
   if(!pub.feasible||pub.charged<=0) return null;
   // Extrapolate the observed session mix including per-visit parking and time.
   const variable=(basis==='cash'?pub.cash:pub.economic)/pub.charged;
-  const fixed=s.equipment+s.installation-(basis==='economic'?s.salvage:0);
+  const fees=homeSetupFees(s);
+  if(fees.needsCableRate)return null;
+  const fixed=fees.fixed+fees.removal-(basis==='economic'?s.salvage:0);
   if(fixed<=0)return {energy:0,km:0,variable};
   if(variable<=s.homePrice+1e-8)return null;
   const energy=fixed/(variable-s.homePrice);

@@ -87,6 +87,15 @@
   .period-settings-heading p{font-size:9px;line-height:1.8}
 }
 
+/* Home installation and end-of-lease removal costs. */
+.parameter-groups .home-removal-option{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:2px 0 12px;color:#5e6c83;font-size:11px;cursor:pointer}
+.home-removal-option input{width:14px;height:14px;margin:0;accent-color:var(--blue);flex-shrink:0}
+.home-fee-summary{grid-column:1/-1;padding:11px 12px;margin-bottom:10px;border:1px solid var(--border);border-radius:6px;background:#fafbfd;display:grid;gap:6px}
+.home-fee-summary>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:11px;color:#7b8799}
+.home-fee-summary output{font-weight:500;color:#405370;white-space:nowrap;font-variant-numeric:tabular-nums}
+.parameter-groups .home-fee-note{margin:-6px 0 15px}
+#removal-note{margin-bottom:8px}
+
 </style>
 </head>
 <body>
@@ -112,8 +121,15 @@
         <details open class="param-section"><summary><span><b class="section-num">02</b> 家庭充电桩</span><span class="chevron">⌄</span></summary><div class="param-content">
           <div class="field"><label for="equipment">设备及基础安装</label><div class="input-unit"><input id="equipment" data-key="equipment" type="number" min="0" max="100000" step="1"><span>元</span></div></div>
           <div class="field"><label for="homePrice">家庭电价</label><div class="input-unit"><input id="homePrice" data-key="homePrice" type="number" min="0" max="10" step="0.01"><span>元 / 度</span></div></div>
-          <div class="field-pair"><div class="field"><label for="installation">额外安装费</label><div class="input-unit"><input id="installation" data-key="installation" type="number" min="0" max="100000" step="1"><span>元</span></div></div><div class="field"><label for="salvage">退租残值</label><div class="input-unit"><input id="salvage" data-key="salvage" type="number" min="0" max="100000" step="1"><span>元</span></div></div></div>
-          <p class="field-note">残值默认 0 元，表示退租后赠送车位主人；仅冲减经济成本，不视为已收到现金。</p>
+          <div class="field"><label for="cableLength">总线路长度</label><div class="input-unit"><input id="cableLength" data-key="cableLength" type="number" min="0" max="10000" step="0.1" aria-describedby="cable-note"><span>米</span></div></div>
+          <div class="field"><label for="cableRate">超出 40 米安装单价</label><div class="input-unit"><input id="cableRate" data-key="cableRate" type="number" min="0" max="10000" step="0.01" placeholder="待填写" aria-describedby="cable-note"><span>元 / 米</span></div></div>
+          <p class="field-note home-fee-note" id="cable-note">40 米内免费，仅对超出部分计费。</p>
+          <div class="field"><label for="installation">其他额外安装费</label><div class="input-unit"><input id="installation" data-key="installation" type="number" min="0" max="100000" step="1"><span>元</span></div></div>
+          <div class="field"><label for="salvage">退租残值（保留 / 转让）</label><div class="input-unit"><input id="salvage" data-key="salvage" type="number" min="0" max="100000" step="1"><span>元</span></div></div>
+          <label class="home-removal-option" for="removeCharger"><input id="removeCharger" data-key="removeCharger" type="checkbox">退租时拆除充电桩</label>
+          <div class="home-fee-summary" aria-live="polite"><div><span>超长线路安装费</span><output id="cable-installation">—</output></div><div><span>退租拆除费</span><output id="removal-cost">—</output></div></div>
+          <p class="field-note" id="removal-note"></p>
+          <p class="field-note">充电桩可拆卸保留，残值默认 0 元；可按保留或转让价值填写，仅冲减经济成本，不视为现金退款。</p>
         </div></details>
         <details open class="param-section"><summary><span><b class="section-num">03</b> 公共快充</span><span class="chevron">⌄</span></summary><div class="param-content">
           <div class="field-pair"><div class="field"><label for="batch">每次充电量上限</label><div class="input-unit"><input id="batch" data-key="batch" type="number" min="1" max="200" step="1"><span>度</span></div></div><div class="field"><label for="power">实际平均功率</label><div class="input-unit"><input id="power" data-key="power" type="number" min="1" max="500" step="1"><span>kW</span></div></div></div>
@@ -142,7 +158,7 @@
           </div>
           <div class="recommendation" id="recommendation" aria-live="polite"></div>
         </section>
-        <section class="chart-grid"><article class="surface"><div class="section-heading"><div><h2>钱花在了哪里</h2><p>对比每一项投入与使用成本</p></div><span class="tiny-label" id="cost-basis-label">经济成本 · 元</span></div><div id="cost-chart" class="cost-chart"></div><div class="chart-legend"><span><i style="--swatch:#275de5"></i>设备 / 安装</span><span><i style="--swatch:#7aa2f8"></i>电费</span><span><i style="--swatch:#bed1fc"></i>服务费</span><span><i style="--swatch:#8a9aad"></i>停车费</span><span><i style="--swatch:#dce4ef"></i>时间成本</span></div><p class="chart-note" id="cost-chart-note"></p></article><article class="surface"><div class="section-heading"><div><h2>你的出行结构</h2><p>每一公里，都纳入计算</p></div></div><div class="travel-visual"><div id="travel-donut" class="travel-donut"><div><strong id="travel-total">—</strong><span>累计公里</span></div></div><div class="travel-legend"><div><span><i class="dot blue"></i> 工作日通勤</span><strong id="weekday-share">—</strong><small id="weekday-distance">—</small></div><div><span><i class="dot pale"></i> 周末出行</span><strong id="weekend-share">—</strong><small id="weekend-distance">—</small></div></div></div></article></section>
+        <section class="chart-grid"><article class="surface"><div class="section-heading"><div><h2>钱花在了哪里</h2><p>对比每一项投入与使用成本</p></div><span class="tiny-label" id="cost-basis-label">经济成本 · 元</span></div><div id="cost-chart" class="cost-chart"></div><div class="chart-legend"><span><i style="--swatch:#275de5"></i>设备 / 安装</span><span><i style="--swatch:#b895ce"></i>拆除费</span><span><i style="--swatch:#7aa2f8"></i>电费</span><span><i style="--swatch:#bed1fc"></i>服务费</span><span><i style="--swatch:#8a9aad"></i>停车费</span><span><i style="--swatch:#dce4ef"></i>时间成本</span></div><p class="chart-note" id="cost-chart-note"></p></article><article class="surface"><div class="section-heading"><div><h2>你的出行结构</h2><p>每一公里，都纳入计算</p></div></div><div class="travel-visual"><div id="travel-donut" class="travel-donut"><div><strong id="travel-total">—</strong><span>累计公里</span></div></div><div class="travel-legend"><div><span><i class="dot blue"></i> 工作日通勤</span><strong id="weekday-share">—</strong><small id="weekday-distance">—</small></div><div><span><i class="dot pale"></i> 周末出行</span><strong id="weekend-share">—</strong><small id="weekend-distance">—</small></div></div></div></article></section>
         <section class="surface tariff-section" id="tariffs"><div class="section-heading"><div><div class="eyebrow">CHARGE WHEN IT MAKES SENSE</div><h2>把电，充在合适的时间</h2><p>精确到分钟的可用窗口 × 24 小时分时电价</p></div><div class="avg-badge"><strong id="weighted-avg">—</strong><span>元 / 度 · 加权均价</span></div></div>
           <div class="schedule-controls"><div class="mode-select segmented" aria-label="充电安排模式"><button type="button" data-mode="smart">ϟ 智能低价</button><button type="button" data-mode="custom">自定义占比</button></div><div class="window-editor"><div class="window-heading"><h3>允许充电时间窗口</h3><p>每行一个窗口，开始与结束时间可精确到分钟。</p></div><div id="windows-list"></div><button type="button" id="add-window" class="text-button">+ 添加窗口</button></div></div>
           <section class="period-settings" aria-labelledby="period-settings-title"><div class="period-settings-heading"><h3 id="period-settings-title">充电时段单价引用</h3><p>价格统一在下方 24 小时电价表中修改，这里实时引用对应时段的单价。</p></div>
@@ -159,11 +175,11 @@
           <p id="schedule-summary" class="chart-note"></p>
           <details open class="tariff-details" id="tariff-price-table"><summary><span>逐小时单价与电量占比 <span class="small-badge">24 个时段</span></span><span class="expand-text">展开 / 收起 ⌄</span></summary><div class="tariff-table-wrap"><p class="table-explainer">在此统一修改电费和服务费，其他区域自动引用并重算。15:00–20:00 的综合单价来自你提供的信息；其电费 / 服务费拆分暂按 0.30 元服务费估计。其余时段均为默认参考价，可直接编辑。“价格来源”仅说明数值来自哪里，不影响计算，也无需额外确认。</p><div class="hour-visibility-controls" aria-label="电价时段显示设置"><div class="hour-fold-range"><span>收起时段</span><select id="fold-start" aria-label="收起时段开始时间"></select><span>—</span><select id="fold-end" aria-label="收起时段结束时间"></select><button type="button" class="button ghost" id="fold-selected-hours">收起所选</button></div><button type="button" class="text-button" id="unfold-all-hours">全部展开</button></div><p id="fold-summary" class="field-note"></p><table class="tariff-table"><thead><tr><th>时段</th><th>电费 <small>元/度</small></th><th>服务费 <small>元/度</small></th><th>综合单价</th><th>允许充电</th><th>自定义权重 <small>%</small></th><th>实际电量占比</th><th>价格来源</th><th>显示</th></tr></thead><tbody id="tariff-rows"></tbody></table></div></details>
         </section>
-        <section class="surface breakeven-section"><div class="section-heading"><div><h2>装家充，什么时候回本？</h2><p>沿用当前公共充电结构，观察累计成本交点</p></div><div class="chart-legend"><span><i style="--swatch:#275de5"></i>家庭充电</span><span><i style="--swatch:#93a4be"></i>公共快充</span></div></div><div class="breakeven-head"><div><span id="breakeven-title">家充预计回本里程</span><div class="breakeven-number"><strong id="breakeven-km">—</strong><span id="breakeven-unit">公里</span></div></div><p id="breakeven-explainer"></p></div><div id="breakeven-chart" class="line-chart"></div><p class="chart-note">按当前平均充电结构线性外推，含每次停车及对应口径的时间成本；不限制当前租期，不预测未来价格。经济口径扣除设定残值，现金口径不扣除。</p></section>
+        <section class="surface breakeven-section"><div class="section-heading"><div><h2>装家充，什么时候回本？</h2><p>沿用当前公共充电结构，观察累计成本交点</p></div><div class="chart-legend"><span><i style="--swatch:#275de5"></i>家庭充电</span><span><i style="--swatch:#93a4be"></i>公共快充</span></div></div><div class="breakeven-head"><div><span id="breakeven-title">家充预计回本里程</span><div class="breakeven-number"><strong id="breakeven-km">—</strong><span id="breakeven-unit">公里</span></div></div><p id="breakeven-explainer"></p></div><div id="breakeven-chart" class="line-chart"></div><p class="chart-note">按当前平均充电结构线性外推，含每次停车及对应口径的时间成本；不限制当前租期，不预测未来价格。已计入安装及所选退租拆除费；经济口径扣除设定残值，现金口径不扣除。</p></section>
         <section class="surface sensitivity-section"><div class="section-heading"><div><h2>如果计划有变化</h2><p>调整一个变量，看看结果如何改变</p></div><select id="sensitivity-variable" aria-label="敏感性分析变量"><option value="mileage">行驶里程</option><option value="price">公共综合电价</option><option value="duration">使用时长</option><option value="salvage">退租残值</option></select></div><div class="sensitivity-body"><div id="sensitivity-chart" class="line-chart"></div></div><p id="sensitivity-note" class="chart-note"></p></section>
         <section class="surface detail-section"><div class="section-heading"><div><h2>完整费用明细</h2><p>现金支出与经济成本，分开看更清楚</p></div><button id="export" type="button" class="button ghost">↓ 导出明细</button></div><div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>费用项目</th><th>家庭充电桩</th><th>第三方公共快充</th></tr></thead><tbody id="detail-rows"></tbody></table></div><div class="detail-footnote"><span>ⓘ</span><p>现金支出 = 租期内实际支付费用；经济成本 = 现金支出 + 额外时间价值 − 期末残值。家充不另计操作时间；公共充电仅将往返及额外办理时间计为机会成本，充电等待可与办公重叠。</p></div></section>
         <section class="conclusions" id="conclusions"></section>
-        <details class="methodology"><summary>计算依据与边界 <span>⌄</span></summary><div><p>① 租期首尾均计入，周末合计里程按每天一半计算。所有可用窗口每天重复，不按法定节假日调整。</p><p>② 充电功率按实际平均功率恒定计算，百公里充电量已包含损耗，不再次叠加损耗。窗口重叠会合并；跨午夜窗口请拆成两段。禁用的小时不会分配电量。</p><p>③ 智能模式在租期内逐次选择电费 + 服务费最低的连续可用区间，单次不超过设置的度数；只有剩余窗口容不下时才拆分。窗口占用不会重复。此为逐次低价策略，不保证含停车及时间成本的全局最优。每日有多个不连续窗口时可以多次到站。</p><p>④ 自定义权重仅对可用时段归一化，按小时目标电量安排实际窗口；不连续到站分别计次，因此次数可能多于总电量 ÷ 单次上限。所选小时容量不足会提示不可行，不自动转移到其他小时。</p><p>⑤ 步行速度按 80 米 / 分钟，往返距离为单程的 2 倍。停车占用 = 充电时长 + 往返步行 + 其他额外耗时；超时按分钟折算收费，不按整小时进位。</p><p>⑥ 残值是退租时的预估价值，并非已收款。长期价值按所选成本口径的回本点与当前变量估计，不作转售或长期电价保证。所有价格均为情景输入，本站与特斯拉无关联。</p></div></details>
+        <details class="methodology"><summary>计算依据与边界 <span>⌄</span></summary><div><p>① 租期首尾均计入，周末合计里程按每天一半计算。所有可用窗口每天重复，不按法定节假日调整。</p><p>② 充电功率按实际平均功率恒定计算，百公里充电量已包含损耗，不再次叠加损耗。窗口重叠会合并；跨午夜窗口请拆成两段。禁用的小时不会分配电量。</p><p>③ 智能模式在租期内逐次选择电费 + 服务费最低的连续可用区间，单次不超过设置的度数；只有剩余窗口容不下时才拆分。窗口占用不会重复。此为逐次低价策略，不保证含停车及时间成本的全局最优。每日有多个不连续窗口时可以多次到站。</p><p>④ 自定义权重仅对可用时段归一化，按小时目标电量安排实际窗口；不连续到站分别计次，因此次数可能多于总电量 ÷ 单次上限。所选小时容量不足会提示不可行，不自动转移到其他小时。</p><p>⑤ 步行速度按 80 米 / 分钟，往返距离为单程的 2 倍。停车占用 = 充电时长 + 往返步行 + 其他额外耗时；超时按分钟折算收费，不按整小时进位。</p><p>⑥ 线路安装前 40 米免费，超出部分按所填单价计算；其他额外安装费单独计入。选择退租拆除时，拆除费为 200 + 5 × 总线路长度（米），两种成本口径均计入。充电桩可拆卸保留，残值是退租时的预估价值，并非已收款。长期价值按所选成本口径的回本点与当前变量估计，不作转售或长期电价保证。所有价格均为情景输入，本站与特斯拉无关联。</p></div></details>
       </div>
     </div>
     <footer><span><b>Chargewise</b> · 让充电选择有据可依</span><span>本地计算，无需登录 · 不含超级充电权益</span></footer>
@@ -174,7 +190,8 @@
 const DEFAULTS = {
   start: '2026-11-10', end: '2027-02-28', weekdayKm: 50, weekendKm: 300,
   completion: 100, consumption: 20, homePrice: 0.45, equipment: 1499,
-  installation: 0, salvage: 0, distance: 200, freeMinutes: 120,
+  installation: 0, cableLength: 40, cableRate: null, removeCharger: true,
+  salvage: 0, distance: 200, freeMinutes: 120,
   parkingRate: 6, extraMinutes: 10, timeValue: 30, batch: 40, power: 60,
   mode: 'smart', windows: [{start:'09:20',end:'11:20'}, {start:'14:00',end:'17:20'}],
   tariffs: Array.from({length:24}, (_, h) => {
@@ -297,13 +314,23 @@ function publicCharging(energy,s,days=3660) {
   return {...plan,feasible,count:plan.sessions.length,electricity,service,parking,time,cash,economic:cash+time,avg:charged>0?(electricity+service)/charged:0,hours,energy,charged,totalMinutes,available,
     error:plan.error||(!feasible?'可用窗口或所选小时容量不足，无法在租期内完成全部充电。':null)};
 }
-function homeCharging(energy,s){const fixed=s.equipment+s.installation,electricity=energy*s.homePrice,cash=fixed+electricity;return {fixed,electricity,service:0,parking:0,time:0,salvage:s.salvage,cash,economic:cash-s.salvage};}
-function calculate(s){const driving=calendar(s);if(!driving.valid)return {valid:false,error:driving.error};const home=homeCharging(driving.energy,s),pub=publicCharging(driving.energy,s,driving.days);return {valid:true,driving,home,pub};}
+function homeSetupFees(s){
+  const length=s.cableLength??DEFAULTS.cableLength,excessLength=Math.max(0,length-40);
+  const needsCableRate=excessLength>0&&(!Number.isFinite(s.cableRate)||s.cableRate<0);
+  const cableInstallation=needsCableRate?NaN:excessLength*(s.cableRate??0);
+  const removal=(s.removeCharger??DEFAULTS.removeCharger)?200+5*length:0;
+  const fixed=s.equipment+s.installation+cableInstallation;
+  return {excessLength,needsCableRate,cableInstallation,removal,fixed};
+}
+function homeCharging(energy,s){const fees=homeSetupFees(s),electricity=energy*s.homePrice,cash=fees.fixed+fees.removal+electricity;return {...fees,electricity,service:0,parking:0,time:0,salvage:s.salvage,cash,economic:cash-s.salvage};}
+function calculate(s){const driving=calendar(s);if(!driving.valid)return {valid:false,error:driving.error};if(homeSetupFees(s).needsCableRate)return {valid:false,error:'线路超过 40 米，请填写超出部分的安装单价。'};const home=homeCharging(driving.energy,s),pub=publicCharging(driving.energy,s,driving.days);return {valid:true,driving,home,pub};}
 function breakEven(s,pub,basis='economic') {
   if(!pub.feasible||pub.charged<=0) return null;
   // Extrapolate the observed session mix including per-visit parking and time.
   const variable=(basis==='cash'?pub.cash:pub.economic)/pub.charged;
-  const fixed=s.equipment+s.installation-(basis==='economic'?s.salvage:0);
+  const fees=homeSetupFees(s);
+  if(fees.needsCableRate)return null;
+  const fixed=fees.fixed+fees.removal-(basis==='economic'?s.salvage:0);
   if(fixed<=0)return {energy:0,km:0,variable};
   if(variable<=s.homePrice+1e-8)return null;
   const energy=fixed/(variable-s.homePrice);
@@ -320,8 +347,9 @@ function saveFoldedHours(){try{localStorage.setItem(FOLD_STORAGE,JSON.stringify(
 function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved?.version===1){const next={...clone(DEFAULTS),...saved.state};if(validState(next))state=next;}}catch{}}
 function validState(s){
   if(!s||!Array.isArray(s.tariffs)||s.tariffs.length!==24||!Array.isArray(s.windows)||s.windows.length>12)return false;
-  const numeric=['weekdayKm','weekendKm','completion','consumption','homePrice','equipment','installation','salvage','distance','freeMinutes','parkingRate','extraMinutes','timeValue','batch','power'];
+  const numeric=['weekdayKm','weekendKm','completion','consumption','homePrice','equipment','installation','cableLength','salvage','distance','freeMinutes','parkingRate','extraMinutes','timeValue','batch','power'];
   if(numeric.some(k=>!Number.isFinite(s[k])||s[k]<0)||s.power<=0||s.batch<=0||s.consumption<=0||s.completion>150)return false;
+  if(typeof s.removeCharger!=='boolean'||s.cableRate!==null&&(!Number.isFinite(s.cableRate)||s.cableRate<0))return false;
   if(!['smart','custom'].includes(s.mode))return false;
   if(s.tariffs.some(t=>!['electricity','service','weight'].every(k=>Number.isFinite(t[k])&&t[k]>=0)))return false;
   if(s.windows.some(w=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.end)))return false;
@@ -332,7 +360,13 @@ const yen=n=>'¥ '+money(n);
 const txt=(id,value)=>$(id).textContent=value;
 function toast(message){txt('toast',message);$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600);}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,state}));}catch{document.body.classList.add('save-failed');const el=document.querySelector('.local-status');if(el)el.textContent='当前浏览器无法保存，仍可正常计算';}}
-function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>el.value=state[el.dataset.key]);buildTariffRows();buildWindows();buildPeriodSettings();}
+function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>{if(el.type==='checkbox')el.checked=state[el.dataset.key];else el.value=state[el.dataset.key]??'';});buildTariffRows();buildWindows();buildPeriodSettings();}
+function syncHomeFees(){
+  const fees=homeSetupFees(state);
+  txt('cable-installation',yen(fees.cableInstallation));txt('removal-cost',yen(fees.removal));
+  txt('cable-note',fees.excessLength>0?`超出 ${fmt(fees.excessLength,1)} 米 × ${state.cableRate===null?'待填写单价':`${money(state.cableRate)} 元 / 米`}；前 40 米免费。`:'40 米内免费；超出部分才按安装单价计费。');
+  txt('removal-note',state.removeCharger?`拆除费 = 200 元 + 5 元 / 米 × 总线路 ${fmt(state.cableLength,1)} 米；计入退租现金支出。`:'退租不拆除，拆除费为 0 元。');
+}
 function buildWindows(){
   $('windows-list').innerHTML=state.windows.map((w,i)=>`<div class="window-row"><span class="window-number">窗口 ${String(i+1).padStart(2,'0')}</span><input type="time" value="${w.start}" data-window="${i}" data-edge="start" aria-label="窗口 ${i+1} 开始时间"><span>—</span><input type="time" value="${w.end}" data-window="${i}" data-edge="end" aria-label="窗口 ${i+1} 结束时间"><button type="button" class="remove-window" data-remove="${i}" aria-label="删除窗口 ${i+1}">×</button></div>`).join('');
   $('add-window').disabled=state.windows.length>=12;
@@ -393,12 +427,17 @@ function foldRange(start,end){
 function render(){
   clearTimeout(renderTimer);
   syncPeriodQuote();
-  const invalid=[...document.querySelectorAll('input')].find(el=>!el.checkValidity()||el.type!=='checkbox'&&el.value==='');
+  syncHomeFees();
+  const invalid=[...document.querySelectorAll('input')].find(el=>!el.checkValidity()||el.type!=='checkbox'&&el.id!=='cableRate'&&el.value==='');
   let error=invalid?'请完成参数输入，并保持在输入框允许的范围内。':'';
   if(!error&&!validState(state))error='请检查日期与数值：结束日期不早于开始日期，计算区间不超过 10 年。';
+  if(!error&&homeSetupFees(state).needsCableRate)error='线路超过 40 米，请填写超出部分的安装单价。';
   if(error){
     txt('error-banner',error);$('error-banner').hidden=false;lastResult=null;$('export').disabled=true;
-    for(const id of ['stat-km','stat-energy','stat-days','stat-count','home-cost','public-cost','weighted-avg','travel-total','weekday-share','weekend-share','breakeven-km'])txt(id,'—');
+    for(const id of ['stat-km','stat-energy','stat-days','stat-count','home-cost','home-fixed','home-unit','home-salvage','public-cost','public-unit','public-time','weighted-avg','travel-total','weekday-share','weekend-share','breakeven-km'])txt(id,'—');
+    for(const id of ['home-bottom','public-bottom','cost-chart-note','breakeven-explainer','sensitivity-note'])txt(id,'');
+    document.querySelectorAll('.plan-card').forEach(el=>el.classList.remove('is-winner'));
+    txt('home-badge','便利之选');txt('public-badge','无需设备投入');
     for(const id of ['cost-chart','price-chart','breakeven-chart','sensitivity-chart'])$(id).innerHTML='<div class="chart-empty">完善参数后重新计算</div>';
     $('travel-donut').style.background='#edf1f7';$('detail-rows').innerHTML='';$('conclusions').innerHTML='';
     $('recommendation').textContent='参数尚未完成，暂不比较费用或推荐方案。';
@@ -423,7 +462,7 @@ function render(){
   txt('home-badge',winner==='home'?'当前成本更低 · 便利之选':'便利之选');txt('public-badge',winner==='public'?'当前成本更低':'无需设备投入');
   txt('home-fixed',yen(h.fixed));txt('home-unit',`${money(state.homePrice)} 元`);txt('home-salvage',yen(state.salvage));
   txt('public-unit',p.feasible?`${p.avg.toFixed(3)} 元`:'—');txt('public-time',p.feasible?`${fmt(p.totalMinutes/60,1)} 小时`:'—');
-  txt('home-bottom',basis==='economic'?`含残值抵扣 ${yen(state.salvage)} · 无额外往返`:'设备与安装一次支付 · 残值未计入现金');
+  txt('home-bottom',`含退租拆除费 ${yen(h.removal)} · ${basis==='economic'?`残值抵扣 ${yen(state.salvage)}`:'残值不计入现金'}`);
   txt('public-bottom',p.feasible?(basis==='economic'?`含时间成本 ${yen(p.time)} · 现金支付 ${yen(p.cash)}`:'仅统计实际付款 · 不含时间价值'):'可用充电时段无法满足当前出行需求');
   const rec=!p.feasible?`<strong>当前公共充电安排不可行，家充可满足需求。</strong><p>${p.error||'请调整充电窗口、功率或电量占比。'} 未充足电量 ${fmt(p.remaining,1)} 度；部分充电的费用不参与推荐。</p>`:
     winner==='tie'?'<strong>当前口径下，两种方案成本基本相同。</strong><p>家充减少往返，公共快充无需一次性设备投入，可按便利性选择。</p>':`<strong>当前计划下，${winner==='home'?'家庭充电桩':'公共快充'}更经济，预计节省 ${yen(Math.abs(diff))}。</strong><p>${basis==='economic'?'已纳入停车、额外时间价值和家充期末残值。':'基于租期内实际付款，不扣除残值，不加入时间价值。'} ${state.tariffs.some((t,h)=>p.hours[h]>0&&!t.verified&&!t.edited)?'部分电量使用默认参考价，可在下方按实际价格修改。':''}</p>`;
@@ -439,7 +478,7 @@ function render(){
 }
 function drawCost({home:h,pub:p}){
   txt('cost-basis-label',`${basis==='cash'?'现金支出':'经济成本'} · 元`);
-  const cats=[['fixed','#275de5','设备 / 安装'],['electricity','#7aa2f8','电费'],['service','#bed1fc','服务费'],['parking','#8a9aad','停车费'],...(basis==='economic'?[['time','#dce4ef','时间成本']]:[])];
+  const cats=[['fixed','#275de5','设备 / 安装'],['removal','#b895ce','拆除费'],['electricity','#7aa2f8','电费'],['service','#bed1fc','服务费'],['parking','#8a9aad','停车费'],...(basis==='economic'?[['time','#dce4ef','时间成本']]:[])];
   const gross=x=>cats.reduce((a,[key])=>a+(x[key]||0),0),max=Math.max(1,gross(h),p.feasible?gross(p):0);
   $('cost-chart').innerHTML=[['家庭充电',h],['公共快充',p]].map(([label,v])=>`<div class="cost-row"><span>${label}</span><div class="stacked-track">${v===p&&!p.feasible?'':cats.map(([k,c,n])=>`<span style="width:${(v[k]||0)/max*100}%;background:${c}" title="${n}：${yen(v[k]||0)}"></span>`).join('')}</div><strong>${v===p&&!p.feasible?'不可行':yen(gross(v))}</strong></div>`).join('');
   txt('cost-chart-note',basis==='economic'?`柱形展示抵扣前成本；家充另扣期末残值 ${yen(state.salvage)}，经济成本为 ${yen(h.economic)}。`:'现金只计实际付款，时间价值与预估残值不进入柱形。');
@@ -493,7 +532,7 @@ function svgLines(points,{xLabel='',markIndex=-1,breakPoint=null,unit='公里'}=
   return out+'</svg>';
 }
 function drawBreakEven({driving:d,home:h,pub:p}){
-  const be=breakEven(state,p,basis),fixed=h.fixed-(basis==='economic'?state.salvage:0),variable=p.feasible&&p.charged?p[basis]/p.charged:0;
+  const be=breakEven(state,p,basis),fixed=h.fixed+h.removal-(basis==='economic'?state.salvage:0),variable=p.feasible&&p.charged?p[basis]/p.charged:0;
   txt('breakeven-km',be?fmt(be.km):'暂不回本');txt('breakeven-unit',be?'公里':'');
   txt('breakeven-explainer',!p.feasible?'公共充电安排不可行，无法计算可比的回本点。':!d.energy?'当前没有用电需求，暂不外推回本点。':be?(be.energy===0?'设定残值已覆盖设备投入；该结论依赖残值能实现。':`约 ${fmt(be.energy,1)} 度电。${d.km>=be.km?'当前计划已超过回本点。':`距离回本还差约 ${fmt(be.km-d.km)} 公里。`}`):'当前公共单位综合成本不高于家庭电价，家充无法用后续节省覆盖净投入。');
   if(!p.feasible||!d.energy){$('breakeven-chart').innerHTML='<div class="chart-empty">需要有效的公共充电安排与用电需求</div>';return;}
@@ -528,7 +567,7 @@ function drawSensitivity(){
 function detailRows({home:h,pub:p}){
   const v=(k)=>p.feasible?p[k]:null;
   return [
-    ['设备与基础安装',state.equipment,0,''],['额外安装费用',state.installation,0,''],
+    ['设备与基础安装',state.equipment,0,''],['超长线路安装费',h.cableInstallation,0,''],['其他额外安装费',state.installation,0,''],['退租拆除费',h.removal,0,''],
     ['充电电费',h.electricity,v('electricity'),''],['充电服务费',0,v('service'),''],['停车费',0,v('parking'),''],
     ['实际现金支出',h.cash,v('cash'),'cash-row'],['额外时间成本',0,v('time'),''],['期末残值抵扣',-state.salvage,0,''],['经济总成本',h.economic,v('economic'),'total-row']
   ];
@@ -546,7 +585,7 @@ function renderConclusions({driving:d,home:h,pub:p}){
 }
 document.addEventListener('input',e=>{
   const el=e.target;
-  if(el.dataset.key){state[el.dataset.key]=el.type==='date'?el.value:el.value===''?NaN:+el.value;}
+  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;}
   else if(el.dataset.tariff){const t=state.tariffs[+el.dataset.hour],key=el.dataset.tariff;t[key]=el.type==='checkbox'?el.checked:el.value===''?NaN:+el.value;if(key==='electricity'||key==='service')t.edited=true;}
   else if(el.dataset.window!==undefined){state.windows[+el.dataset.window][el.dataset.edge]=el.value;}
   else return;

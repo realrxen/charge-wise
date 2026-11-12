@@ -1,4 +1,4 @@
-import {DEFAULTS,clone,calculate,calendar,availability,breakEven,money,minuteToTime} from './engine.js';
+import {DEFAULTS,clone,calculate,calendar,availability,breakEven,homeSetupFees,money,minuteToTime} from './engine.js';
 
 const $=id=>document.getElementById(id), STORAGE='chargewise:v1';
 const FOLD_STORAGE='chargewise:folded-hours:v1';
@@ -9,8 +9,9 @@ function saveFoldedHours(){try{localStorage.setItem(FOLD_STORAGE,JSON.stringify(
 function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE));if(saved?.version===1){const next={...clone(DEFAULTS),...saved.state};if(validState(next))state=next;}}catch{}}
 function validState(s){
   if(!s||!Array.isArray(s.tariffs)||s.tariffs.length!==24||!Array.isArray(s.windows)||s.windows.length>12)return false;
-  const numeric=['weekdayKm','weekendKm','completion','consumption','homePrice','equipment','installation','salvage','distance','freeMinutes','parkingRate','extraMinutes','timeValue','batch','power'];
+  const numeric=['weekdayKm','weekendKm','completion','consumption','homePrice','equipment','installation','cableLength','salvage','distance','freeMinutes','parkingRate','extraMinutes','timeValue','batch','power'];
   if(numeric.some(k=>!Number.isFinite(s[k])||s[k]<0)||s.power<=0||s.batch<=0||s.consumption<=0||s.completion>150)return false;
+  if(typeof s.removeCharger!=='boolean'||s.cableRate!==null&&(!Number.isFinite(s.cableRate)||s.cableRate<0))return false;
   if(!['smart','custom'].includes(s.mode))return false;
   if(s.tariffs.some(t=>!['electricity','service','weight'].every(k=>Number.isFinite(t[k])&&t[k]>=0)))return false;
   if(s.windows.some(w=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.end)))return false;
@@ -21,7 +22,13 @@ const yen=n=>'¥ '+money(n);
 const txt=(id,value)=>$(id).textContent=value;
 function toast(message){txt('toast',message);$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2600);}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,state}));}catch{document.body.classList.add('save-failed');const el=document.querySelector('.local-status');if(el)el.textContent='当前浏览器无法保存，仍可正常计算';}}
-function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>el.value=state[el.dataset.key]);buildTariffRows();buildWindows();buildPeriodSettings();}
+function syncInputs(){document.querySelectorAll('[data-key]').forEach(el=>{if(el.type==='checkbox')el.checked=state[el.dataset.key];else el.value=state[el.dataset.key]??'';});buildTariffRows();buildWindows();buildPeriodSettings();}
+function syncHomeFees(){
+  const fees=homeSetupFees(state);
+  txt('cable-installation',yen(fees.cableInstallation));txt('removal-cost',yen(fees.removal));
+  txt('cable-note',fees.excessLength>0?`超出 ${fmt(fees.excessLength,1)} 米 × ${state.cableRate===null?'待填写单价':`${money(state.cableRate)} 元 / 米`}；前 40 米免费。`:'40 米内免费；超出部分才按安装单价计费。');
+  txt('removal-note',state.removeCharger?`拆除费 = 200 元 + 5 元 / 米 × 总线路 ${fmt(state.cableLength,1)} 米；计入退租现金支出。`:'退租不拆除，拆除费为 0 元。');
+}
 function buildWindows(){
   $('windows-list').innerHTML=state.windows.map((w,i)=>`<div class="window-row"><span class="window-number">窗口 ${String(i+1).padStart(2,'0')}</span><input type="time" value="${w.start}" data-window="${i}" data-edge="start" aria-label="窗口 ${i+1} 开始时间"><span>—</span><input type="time" value="${w.end}" data-window="${i}" data-edge="end" aria-label="窗口 ${i+1} 结束时间"><button type="button" class="remove-window" data-remove="${i}" aria-label="删除窗口 ${i+1}">×</button></div>`).join('');
   $('add-window').disabled=state.windows.length>=12;
@@ -82,12 +89,17 @@ function foldRange(start,end){
 function render(){
   clearTimeout(renderTimer);
   syncPeriodQuote();
-  const invalid=[...document.querySelectorAll('input')].find(el=>!el.checkValidity()||el.type!=='checkbox'&&el.value==='');
+  syncHomeFees();
+  const invalid=[...document.querySelectorAll('input')].find(el=>!el.checkValidity()||el.type!=='checkbox'&&el.id!=='cableRate'&&el.value==='');
   let error=invalid?'请完成参数输入，并保持在输入框允许的范围内。':'';
   if(!error&&!validState(state))error='请检查日期与数值：结束日期不早于开始日期，计算区间不超过 10 年。';
+  if(!error&&homeSetupFees(state).needsCableRate)error='线路超过 40 米，请填写超出部分的安装单价。';
   if(error){
     txt('error-banner',error);$('error-banner').hidden=false;lastResult=null;$('export').disabled=true;
-    for(const id of ['stat-km','stat-energy','stat-days','stat-count','home-cost','public-cost','weighted-avg','travel-total','weekday-share','weekend-share','breakeven-km'])txt(id,'—');
+    for(const id of ['stat-km','stat-energy','stat-days','stat-count','home-cost','home-fixed','home-unit','home-salvage','public-cost','public-unit','public-time','weighted-avg','travel-total','weekday-share','weekend-share','breakeven-km'])txt(id,'—');
+    for(const id of ['home-bottom','public-bottom','cost-chart-note','breakeven-explainer','sensitivity-note'])txt(id,'');
+    document.querySelectorAll('.plan-card').forEach(el=>el.classList.remove('is-winner'));
+    txt('home-badge','便利之选');txt('public-badge','无需设备投入');
     for(const id of ['cost-chart','price-chart','breakeven-chart','sensitivity-chart'])$(id).innerHTML='<div class="chart-empty">完善参数后重新计算</div>';
     $('travel-donut').style.background='#edf1f7';$('detail-rows').innerHTML='';$('conclusions').innerHTML='';
     $('recommendation').textContent='参数尚未完成，暂不比较费用或推荐方案。';
@@ -112,7 +124,7 @@ function render(){
   txt('home-badge',winner==='home'?'当前成本更低 · 便利之选':'便利之选');txt('public-badge',winner==='public'?'当前成本更低':'无需设备投入');
   txt('home-fixed',yen(h.fixed));txt('home-unit',`${money(state.homePrice)} 元`);txt('home-salvage',yen(state.salvage));
   txt('public-unit',p.feasible?`${p.avg.toFixed(3)} 元`:'—');txt('public-time',p.feasible?`${fmt(p.totalMinutes/60,1)} 小时`:'—');
-  txt('home-bottom',basis==='economic'?`含残值抵扣 ${yen(state.salvage)} · 无额外往返`:'设备与安装一次支付 · 残值未计入现金');
+  txt('home-bottom',`含退租拆除费 ${yen(h.removal)} · ${basis==='economic'?`残值抵扣 ${yen(state.salvage)}`:'残值不计入现金'}`);
   txt('public-bottom',p.feasible?(basis==='economic'?`含时间成本 ${yen(p.time)} · 现金支付 ${yen(p.cash)}`:'仅统计实际付款 · 不含时间价值'):'可用充电时段无法满足当前出行需求');
   const rec=!p.feasible?`<strong>当前公共充电安排不可行，家充可满足需求。</strong><p>${p.error||'请调整充电窗口、功率或电量占比。'} 未充足电量 ${fmt(p.remaining,1)} 度；部分充电的费用不参与推荐。</p>`:
     winner==='tie'?'<strong>当前口径下，两种方案成本基本相同。</strong><p>家充减少往返，公共快充无需一次性设备投入，可按便利性选择。</p>':`<strong>当前计划下，${winner==='home'?'家庭充电桩':'公共快充'}更经济，预计节省 ${yen(Math.abs(diff))}。</strong><p>${basis==='economic'?'已纳入停车、额外时间价值和家充期末残值。':'基于租期内实际付款，不扣除残值，不加入时间价值。'} ${state.tariffs.some((t,h)=>p.hours[h]>0&&!t.verified&&!t.edited)?'部分电量使用默认参考价，可在下方按实际价格修改。':''}</p>`;
@@ -128,7 +140,7 @@ function render(){
 }
 function drawCost({home:h,pub:p}){
   txt('cost-basis-label',`${basis==='cash'?'现金支出':'经济成本'} · 元`);
-  const cats=[['fixed','#275de5','设备 / 安装'],['electricity','#7aa2f8','电费'],['service','#bed1fc','服务费'],['parking','#8a9aad','停车费'],...(basis==='economic'?[['time','#dce4ef','时间成本']]:[])];
+  const cats=[['fixed','#275de5','设备 / 安装'],['removal','#b895ce','拆除费'],['electricity','#7aa2f8','电费'],['service','#bed1fc','服务费'],['parking','#8a9aad','停车费'],...(basis==='economic'?[['time','#dce4ef','时间成本']]:[])];
   const gross=x=>cats.reduce((a,[key])=>a+(x[key]||0),0),max=Math.max(1,gross(h),p.feasible?gross(p):0);
   $('cost-chart').innerHTML=[['家庭充电',h],['公共快充',p]].map(([label,v])=>`<div class="cost-row"><span>${label}</span><div class="stacked-track">${v===p&&!p.feasible?'':cats.map(([k,c,n])=>`<span style="width:${(v[k]||0)/max*100}%;background:${c}" title="${n}：${yen(v[k]||0)}"></span>`).join('')}</div><strong>${v===p&&!p.feasible?'不可行':yen(gross(v))}</strong></div>`).join('');
   txt('cost-chart-note',basis==='economic'?`柱形展示抵扣前成本；家充另扣期末残值 ${yen(state.salvage)}，经济成本为 ${yen(h.economic)}。`:'现金只计实际付款，时间价值与预估残值不进入柱形。');
@@ -182,7 +194,7 @@ function svgLines(points,{xLabel='',markIndex=-1,breakPoint=null,unit='公里'}=
   return out+'</svg>';
 }
 function drawBreakEven({driving:d,home:h,pub:p}){
-  const be=breakEven(state,p,basis),fixed=h.fixed-(basis==='economic'?state.salvage:0),variable=p.feasible&&p.charged?p[basis]/p.charged:0;
+  const be=breakEven(state,p,basis),fixed=h.fixed+h.removal-(basis==='economic'?state.salvage:0),variable=p.feasible&&p.charged?p[basis]/p.charged:0;
   txt('breakeven-km',be?fmt(be.km):'暂不回本');txt('breakeven-unit',be?'公里':'');
   txt('breakeven-explainer',!p.feasible?'公共充电安排不可行，无法计算可比的回本点。':!d.energy?'当前没有用电需求，暂不外推回本点。':be?(be.energy===0?'设定残值已覆盖设备投入；该结论依赖残值能实现。':`约 ${fmt(be.energy,1)} 度电。${d.km>=be.km?'当前计划已超过回本点。':`距离回本还差约 ${fmt(be.km-d.km)} 公里。`}`):'当前公共单位综合成本不高于家庭电价，家充无法用后续节省覆盖净投入。');
   if(!p.feasible||!d.energy){$('breakeven-chart').innerHTML='<div class="chart-empty">需要有效的公共充电安排与用电需求</div>';return;}
@@ -217,7 +229,7 @@ function drawSensitivity(){
 function detailRows({home:h,pub:p}){
   const v=(k)=>p.feasible?p[k]:null;
   return [
-    ['设备与基础安装',state.equipment,0,''],['额外安装费用',state.installation,0,''],
+    ['设备与基础安装',state.equipment,0,''],['超长线路安装费',h.cableInstallation,0,''],['其他额外安装费',state.installation,0,''],['退租拆除费',h.removal,0,''],
     ['充电电费',h.electricity,v('electricity'),''],['充电服务费',0,v('service'),''],['停车费',0,v('parking'),''],
     ['实际现金支出',h.cash,v('cash'),'cash-row'],['额外时间成本',0,v('time'),''],['期末残值抵扣',-state.salvage,0,''],['经济总成本',h.economic,v('economic'),'total-row']
   ];
@@ -235,7 +247,7 @@ function renderConclusions({driving:d,home:h,pub:p}){
 }
 document.addEventListener('input',e=>{
   const el=e.target;
-  if(el.dataset.key){state[el.dataset.key]=el.type==='date'?el.value:el.value===''?NaN:+el.value;}
+  if(el.dataset.key){state[el.dataset.key]=el.type==='checkbox'?el.checked:el.type==='date'?el.value:el.value===''?(el.id==='cableRate'?null:NaN):+el.value;}
   else if(el.dataset.tariff){const t=state.tariffs[+el.dataset.hour],key=el.dataset.tariff;t[key]=el.type==='checkbox'?el.checked:el.value===''?NaN:+el.value;if(key==='electricity'||key==='service')t.edited=true;}
   else if(el.dataset.window!==undefined){state.windows[+el.dataset.window][el.dataset.edge]=el.value;}
   else return;
