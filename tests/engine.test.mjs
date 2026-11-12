@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {DEFAULTS,clone,calendar,availability,publicCharging,calculate,homeCharging,homeSetupFees,automaticSalvage,homeSalvage,breakEven,minuteToTime} from '../dist/engine.js';
+import {DEFAULTS,clone,calendar,tariffAverage,publicCharging,calculate,homeCharging,homeSetupFees,automaticSalvage,homeSalvage,breakEven} from '../dist/engine.js';
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 function fixture(extra={}){return {...clone(DEFAULTS),...(Object.hasOwn(extra,'salvage')?{salvageMode:'manual'}:{}),...extra};}
 
@@ -24,38 +24,15 @@ test('跨月与单个周末日不重复或漏算里程',()=>{
   const r=calendar(fixture({start:'2027-02-28',end:'2027-02-28',completion:40}));assert.equal(r.weekends,1);near(r.km,60);near(r.energy,12);
   assert.equal(calendar(fixture({start:'2027-03-01',end:'2027-02-28'})).valid,false);
 });
-test('默认智能充电选择允许窗口内 0.75 元时段而非算术平均价',()=>{
-  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.75);near(r.pub.cash,1312.5);near(r.home.cash,2686.5);near(r.home.economic,1886.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1642.5);
+test('默认公共费用按全部 24 小时等权均价估算',()=>{
+  const r=calculate(DEFAULTS);assert.equal(r.pub.feasible,true);near(r.pub.avg,.89625);near(r.pub.cash,1568.4375);near(r.home.cash,2686.5);near(r.home.economic,1886.5);assert.equal(r.pub.count,44);near(r.pub.time,330);near(r.pub.economic,1898.4375);
 });
-test('跨小时按实际度数计费，结束分钟的部分电量精确处理',()=>{
-  const s=fixture({windows:[{start:'15:40',end:'16:10'}],batch:30});
-  const r=publicCharging(30,s,1);assert.equal(r.feasible,true);near(r.hours[15],20);near(r.hours[16],10);near(r.electricity+r.service,31.5);near(r.avg,1.05);
-  const short=publicCharging(30.5,fixture({windows:[{start:'15:40',end:'16:11'}],batch:30.5}),1);near(short.charged,30.5);near(short.hours[15]+short.hours[16],30.5);
-});
-test('重叠窗口合并，禁止小时移除，容量不会重复使用',()=>{
-  const s=fixture({windows:[{start:'09:20',end:'11:20'},{start:'10:00',end:'12:00'}]});s.tariffs[10].enabled=false;
-  const a=availability(s);assert.deepEqual(a.intervals,[[560,600],[660,720]]);assert.equal(a.minutes,100);
-  const r=publicCharging(110,s,1);assert.equal(r.feasible,false);near(r.charged,100);near(r.remaining,10);
-});
-test('每次充电不超过上限，且同一天安排不存在重叠',()=>{
-  const s=fixture({windows:[{start:'10:00',end:'11:00'}],batch:40});
-  const r=publicCharging(115,s,2);assert.equal(r.feasible,true);near(r.charged,115);
-  for(const session of r.sessions){assert.ok(session.energy<=40+1e-6);assert.ok(session.start>=600);assert.ok(session.end<=660);}
-  for(let i=0;i<r.sessions.length;i++)for(let j=i+1;j<r.sessions.length;j++){const a=r.sessions[i],b=r.sessions[j];if(a.day===b.day)assert.ok(a.end<=b.start+1e-6||b.end<=a.start+1e-6);}
-});
-test('自定义按可用小时归一化权重，忽略窗口外权重',()=>{
-  const s=fixture({mode:'custom',windows:[{start:'15:00',end:'17:00'}]});s.tariffs.forEach(t=>t.weight=0);s.tariffs[15].weight=20;s.tariffs[16].weight=60;s.tariffs[3].weight=100;
-  const r=publicCharging(40,s,1);assert.equal(r.feasible,true);near(r.hours[15],10);near(r.hours[16],30);near(r.avg,(10*.93+30*1.29)/40);
-});
-test('自定义小时容量不足不会自动转移占比或作为完整方案推荐',()=>{
-  const s=fixture({mode:'custom',windows:[{start:'09:20',end:'11:20'}]});s.tariffs.forEach(t=>t.weight=0);s.tariffs[9].weight=50;s.tariffs[10].weight=50;
-  const r=publicCharging(120,s,1);assert.equal(r.feasible,false);near(r.hours[9],40);near(r.hours[10],60);near(r.remaining,20);
-});
-test('零权重或没有窗口明确不可行，零需求保持零用电与零到站',()=>{
-  const s=fixture({mode:'custom'});s.tariffs.forEach(t=>t.weight=0);assert.equal(publicCharging(10,s,1).feasible,false);
-  assert.equal(publicCharging(10,fixture({windows:[]}),1).feasible,false);
-  const r=calculate(fixture({completion:0}));near(r.pub.cash,0);assert.equal(r.pub.count,0);near(r.home.cash,1899);
-});
+
+
+
+
+
+
 test('超时停车按分钟收费；距离、额外耗时与时间价值独立计入',()=>{
   const s=fixture({power:20,batch:40,windows:[{start:'14:00',end:'17:20'}],freeMinutes:120,parkingRate:6,distance:200,extraMinutes:10,timeValue:30});
   const r=publicCharging(40,s,1);near(r.parking,1.5);near(r.time,7.5);near(r.economic-r.cash,7.5);
@@ -66,14 +43,11 @@ test('残值只冲减经济成本，不改变实际现金支付',()=>{
 });
 test('回本分别使用现金与经济口径，较高公共单位成本才产生交点',()=>{
   const r=calculate(DEFAULTS),cash=breakEven(DEFAULTS,r.pub,'cash'),econ=breakEven(DEFAULTS,r.pub,'economic');
-  near(cash.energy,1899/(.75-.45));near(cash.km,cash.energy*5);assert.ok(econ.km<cash.km);
+  near(cash.energy,1899/(.89625-.45));near(cash.km,cash.energy*5);assert.ok(econ.km<cash.km);
   const cheap=fixture({homePrice:2});assert.equal(breakEven(cheap,r.pub),null);
   assert.equal(breakEven(fixture({salvage:1899}),r.pub).energy,0);
 });
-test('格式化不产生 01:60 这样的非法分钟',()=>{assert.equal(minuteToTime(119.9),'02:00');assert.equal(minuteToTime(1440),'24:00');});
-test('价格全为零时仍能正确分配电量和保留时间成本',()=>{
-  const s=fixture();s.tariffs.forEach(t=>{t.electricity=0;t.service=0;});const r=publicCharging(40,s,1);assert.equal(r.feasible,true);near(r.cash,0);near(r.avg,0);near(r.time,7.5);
-});
+
 
 
 test('线路安装只对超过 40 米的部分收费，支持小数长度',()=>{
@@ -101,7 +75,7 @@ test('超长安装及拆除共同计入回本成本，残值仅影响经济口�
   const s=fixture({cableLength:60,cableRate:50,installation:100,salvage:600});
   const r=calculate(s),cash=breakEven(s,r.pub,'cash'),economic=breakEven(s,r.pub,'economic');
   const upfront=1499+1000+100,removal=500;
-  near(cash.energy,(upfront+removal)/(.75-.45));
+  near(cash.energy,(upfront+removal)/(.89625-.45));
   near(economic.energy,(upfront+removal-600)/(r.pub.economic/r.pub.charged-.45));
 });
 
@@ -130,4 +104,26 @@ test('回本使用与费用明细相同的残值，现金口径不受年限分�
   near(breakEven(long,pub).energy-breakEven(short,pub).energy,400/(pub.economic/pub.charged-short.homePrice));
   const kept={...long,removeCharger:false,salvage:9999,salvageMode:'manual'};
   near(breakEven(kept,pub).energy,1499/(pub.economic/pub.charged-short.homePrice));
+});
+
+
+test('电费与服务费分别等权平均，单一小时价格变化按 1/24 计入',()=>{
+  const s=fixture();s.tariffs=Array.from({length:24},()=>({electricity:.5,service:.2}));
+  near(tariffAverage(s).total,.7);const before=publicCharging(240,s);near(before.electricity,120);near(before.service,48);
+  s.tariffs[15].electricity=2.9;const after=publicCharging(240,s);near(after.electricity-before.electricity,24);near(after.service,before.service);near(after.avg,.8);
+});
+test('旧时间窗口、智能模式、小时开关及权重不再影响费用',()=>{
+  const a=fixture(),b=fixture({mode:'custom',windows:[]});b.tariffs.forEach(t=>{t.enabled=false;t.weight=0;});
+  assert.deepEqual(publicCharging(100,a),publicCharging(100,b));
+});
+test('按单次电量估算次数，最后一次停车只按剩余电量计算',()=>{
+  const s=fixture({power:20,batch:40,distance:0,extraMinutes:0,freeMinutes:60,parkingRate:6});
+  const partial=publicCharging(45,s);assert.equal(partial.count,2);near(partial.parking,6);near(partial.charged,45);
+  const exact=publicCharging(80,s);assert.equal(exact.count,2);near(exact.parking,12);
+  const empty=publicCharging(0,s);assert.equal(empty.count,0);near(empty.cash,0);near(empty.time,0);near(empty.avg,.89625);
+});
+test('零需求仍显示参考电价，零电价不影响次数、停车和时间成本',()=>{
+  const s=fixture({power:20,batch:40,freeMinutes:0});s.tariffs.forEach(t=>{t.electricity=0;t.service=0;});
+  const r=publicCharging(40,s);near(r.electricity,0);near(r.service,0);assert.equal(r.count,1);assert.ok(r.parking>0);near(r.time,7.5);
+  const zero=calculate(fixture({completion:0}));near(zero.pub.cash,0);near(zero.home.cash,1899);
 });
